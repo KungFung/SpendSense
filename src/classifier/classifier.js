@@ -5,7 +5,9 @@
 //   1. Keyword rules  (keywords.js)          -> "need" / "want"
 //   2. Category rules (if a category exists) -> "need" / "want"
 //   3. Nothing matched, or a mixed shop      -> "unsure"
-//   4. (optional) Gemini looks at ONLY the unsure ones (gemini.js)
+//   4. (optional) Gemini looks at ONLY the unsure ones: see classifyTransactions in index.js
+//
+// This file has no AI and no Node features, so the website loads it too (index.html).
 //
 // Each transaction comes back with 4 extra fields (plus "group", a short shop type):
 //   label:      "need" | "want" | "unsure" | "income"
@@ -13,8 +15,9 @@
 //   reason:     a short sentence a human can read
 //   source:     "keyword" | "category" | "ai"  (which step decided)
 
-const { KEYWORD_RULES, CATEGORY_RULES } = require("./keywords");
-const { askGeminiAboutUnsure } = require("./gemini");
+(function () { // keeps these names private when loaded in the browser
+
+const { KEYWORD_RULES, CATEGORY_RULES } = typeof require === "function" ? require("./keywords") : globalThis.SpendSense;
 
 // Make text easy to compare: "McDonald's 1182" -> "MCDONALDS 1182",
 // "AMAZON.CO.UK*2K4P1" -> "AMAZON CO UK 2K4P1".
@@ -88,32 +91,9 @@ function classifyByRules(transaction) {
   return { ...result, label: "unsure", group: null, confidence: 0, reason: "No rule matched this description", source: "keyword" };
 }
 
-// MAIN FUNCTION. Give it an array of transactions, get the same transactions back
-// with label / confidence / reason / source added.
-//
-// options.useAI (default true): send the unsure ones to Gemini, IF a key is set.
-// It is async because of the optional AI step, so call it with:  await classifyTransactions(list)
-async function classifyTransactions(transactions, options = {}) {
-  const useAI = options.useAI !== false;
-  const classified = transactions.map(classifyByRules);
+const api = { classifyByRules, findKeyword, normalise };
 
-  if (!useAI) return classified;
-
-  // Only the unsure ones go to the AI. If anything goes wrong, they simply stay unsure.
-  const unsure = classified.filter((t) => t.label === "unsure");
-  const aiAnswers = await askGeminiAboutUnsure(unsure, options); // returns [] on any problem
-
-  // Copy the AI's answers back onto the matching transactions.
-  aiAnswers.forEach((answer) => {
-    const transaction = unsure[answer.id];
-    if (!transaction) return;
-    transaction.label = answer.label;
-    transaction.confidence = answer.confidence;
-    transaction.reason = `AI: ${answer.reason}`;
-    transaction.source = "ai";
-  });
-
-  return classified;
-}
-
-module.exports = { classifyTransactions, classifyByRules, findKeyword, normalise };
+// Works in Node (require) AND in the browser (<script> tag, then use window.SpendSense).
+if (typeof module === "object" && module.exports) module.exports = api;
+else globalThis.SpendSense = Object.assign(globalThis.SpendSense || {}, api);
+})();

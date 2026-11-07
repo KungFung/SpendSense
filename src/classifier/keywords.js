@@ -13,6 +13,8 @@
 //
 // To add a shop: put its name in the right list. That's it.
 
+(function () { // keeps these names private when loaded in the browser
+
 const KEYWORD_RULES = [
   // ---------- NEEDS: essentials ----------
   { label: "need", group: "rent/housing", keywords: ["RENT", "MORTGAGE", "LETTINGS"] },
@@ -36,6 +38,7 @@ const KEYWORD_RULES = [
   { label: "need", group: "fuel", keywords: ["SHELL", "BP", "ESSO", "TEXACO", "PETROL"] },
   { label: "need", group: "insurance", keywords: ["ADMIRAL", "AVIVA", "DIRECT LINE", "LV=", "AXA", "INSURANCE"] },
   { label: "need", group: "health", keywords: ["PHARMACY", "NHS", "DENTAL", "OPTICIAN"] },
+  { label: "need", group: "car repair", keywords: ["KWIK FIT", "HALFORDS", "MOT", "GARAGE"] },
 
   // ---------- WANTS: nice-to-haves ----------
   {
@@ -74,6 +77,7 @@ const CATEGORY_RULES = {
   insurance: "need",
   health: "need",
   "council tax": "need",
+  "car repair": "need",
   eating_out: "want",
   "eating out": "want",
   takeaway: "want",
@@ -86,4 +90,9 @@ const CATEGORY_RULES = {
   subscriptions: "want",
 };
 
-module.exports = { KEYWORD_RULES, CATEGORY_RULES };
+const api = { KEYWORD_RULES, CATEGORY_RULES };
+
+// Works in Node (require) AND in the browser (<script> tag, then use window.SpendSense).
+if (typeof module === "object" && module.exports) module.exports = api;
+else globalThis.SpendSense = Object.assign(globalThis.SpendSense || {}, api);
+})();

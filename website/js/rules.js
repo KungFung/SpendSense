@@ -17,12 +17,17 @@
 
 const ruleById = (id) => DEMO.rules.find((r) => r.id === id);
 
+// "That's 4× your usual takeaway (£18)." from compareToUsual() in statement.js.
+const usualText = (u) => (u ? `That's ${Math.round(u.times)}× your usual ${u.what} (${money(u.usual)}).` : "");
+
 function checkPurchase(tx) {
   const hour = new Date(tx.date).getHours();
 
-  // 1. Essentials are never held.
-  if (tx.type === "need") {
-    return { action: "allow", reason: "Essentials are never held." };
+  // 1. Essentials are never held. Need or want comes from our classifier (statement.js),
+  //    not from a label typed into the purchase.
+  const label = labelPurchase(tx);
+  if (label.type === "need") {
+    return { action: "allow", reason: `Essentials are never held (${label.group}).` };
   }
 
   // 2. Planned purchases: through once cooled off, held while still cooling.
@@ -40,9 +45,12 @@ function checkPurchase(tx) {
     };
   }
 
+  // How this compares with the user's own spending (from their statement). null if it's normal for them.
+  const unusual = compareToUsual(tx);
+
   // 3. Late at night.
   if (hour < 6 && tx.amount > 50) {
-    return { action: "hold", rule: ruleById("late_night") };
+    return { action: "hold", rule: ruleById("late_night"), reason: usualText(unusual) };
   }
 
   // 4. Big purchase that wasn't planned.
@@ -50,17 +58,16 @@ function checkPurchase(tx) {
     return {
       action: "hold",
       rule: ruleById("big_purchase"),
-      reason: "Plan it first: after a short cooling-off it goes straight through.",
+      reason: `${usualText(unusual)} Plan it first: after a short cooling-off it goes straight through.`.trim(),
     };
   }
 
-  // 5. Unusually big takeaway.
-  if (tx.category === "takeaway" && tx.amount > 3 * DEMO.usualTakeaway) {
-    const times = Math.round(tx.amount / DEMO.usualTakeaway);
+  // 5. Much bigger than this person usually spends on this kind of thing: a nudge, not a hold.
+  if (unusual) {
     return {
       action: "nudge",
-      rule: ruleById("takeaways"),
-      reason: `That's ${times}× your usual takeaway (${money(DEMO.usualTakeaway)}).`,
+      rule: unusual.what === "takeaway" ? ruleById("takeaways") : { text: "Much bigger than your usual" },
+      reason: usualText(unusual),
     };
   }
 

@@ -117,6 +117,14 @@
         </div>
       </div>
 
+      <div class="span-2" id="statement-card" hidden>
+        <div class="section-title">From your statement</div>
+        <div class="card">
+          <p class="num" id="statement-summary"></p>
+          <ul id="statement-flags"></ul>
+        </div>
+      </div>
+
       <div class="span-2">
         <div class="section-title">Cooling off</div>
         <ul id="home-plans"></ul>
@@ -127,7 +135,8 @@
         <div class="section-title">Quick actions</div>
         <div class="quick">
           <button class="row-btn" type="button" data-go="plan">＋ Plan a purchase <span class="chev">›</span></button>
-          <button class="row-btn" type="button" disabled>📄 Upload a statement (soon) <span class="chev">›</span></button>
+          <button class="row-btn" id="statement-upload" type="button">📄 <span id="statement-label">Upload a statement</span> <span class="chev">›</span></button>
+          <input id="statement-file" type="file" accept=".csv,text/csv" hidden />
           <button class="row-btn" type="button" data-go="pact">✏️ View my pact <span class="chev">›</span></button>
         </div>
       </div>
@@ -237,6 +246,11 @@
   <!-- Load order matters: core first, app last. Add your file between them. -->
   <script src="js/core.js"></script>
   <script src="js/plan.js"></script>
+  <!-- Need/want classifier: the same files `npm run classify` uses (no AI in the browser). -->
+  <script src="../src/classifier/keywords.js"></script>
+  <script src="../src/classifier/classifier.js"></script>
+  <script src="../src/classifier/impulse.js"></script>
+  <script src="../src/classifier/csvLoader.js"></script>
   <script src="js/statement.js"></script>
   <script src="js/rules.js"></script>
   <script src="js/hold.js"></script>

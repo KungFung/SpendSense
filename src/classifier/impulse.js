@@ -11,6 +11,8 @@
 //   2. "busy_day"      lots of wants on a single day
 //   3. "payday_burst"  a lot of want spending in the few days after payday
 
+(function () { // keeps these names private when loaded in the browser
+
 // ---- Settings: tweak these to make the checks stricter or gentler ----
 const SETTINGS = {
   bigWantMultiple: 3, // a want 3x bigger than your usual want...
@@ -145,4 +147,9 @@ function detectImpulseSpending(classifiedTransactions, settings = {}) {
   return flags.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-module.exports = { detectImpulseSpending, SETTINGS, median };
+const api = { detectImpulseSpending, SETTINGS, NOT_IMPULSIVE_GROUPS, median, shortName };
+
+// Works in Node (require) AND in the browser (<script> tag, then use window.SpendSense).
+if (typeof module === "object" && module.exports) module.exports = api;
+else globalThis.SpendSense = Object.assign(globalThis.SpendSense || {}, api);
+})();

@@ -11,10 +11,10 @@
 //   - type:   "income" if amount > 0, otherwise "expense".
 //   - Anything we don't know is null. We never invent values.
 //
-// To swap in the real parser later, just make it return the same shape —
-// nothing else in src/classifier/ needs to change.
+// The website loads this file too (index.html) to read a statement the user uploads.
 
-const fs = require("node:fs");
+(function () { // keeps these names private when loaded in the browser
+
 
 // Split ONE line of CSV into its cells. Handles quoted cells that contain commas,
 // e.g.  "'3167 03Nov26 C , DELIVEROO , GB"  stays as one cell.
@@ -97,7 +97,13 @@ function parseStatementCsv(csvText) {
 
 // Read a CSV file from disk and parse it.
 function loadStatementCsv(filePath) {
+  const fs = require("node:fs"); // Node only, so it's loaded here and not at the top
   return parseStatementCsv(fs.readFileSync(filePath, "utf8"));
 }
 
-module.exports = { loadStatementCsv, parseStatementCsv, toIsoDate, splitCsvLine };
+const api = { loadStatementCsv, parseStatementCsv, toIsoDate, splitCsvLine };
+
+// Works in Node (require) AND in the browser (<script> tag, then use window.SpendSense).
+if (typeof module === "object" && module.exports) module.exports = api;
+else globalThis.SpendSense = Object.assign(globalThis.SpendSense || {}, api);
+})();
