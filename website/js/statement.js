@@ -101,13 +101,19 @@ const NUDGE_MULTIPLE = 2;
 // Is this purchase much bigger than usual? At least NUDGE_MULTIPLE x usual, and at least £30
 // (impulse.js SETTINGS.bigWantMinimum, so £9 vs £3 isn't flagged). Needs are never compared.
 function compareToUsual(tx) {
+  const c = compareWithUsual(tx);
+  if (!c || tx.amount < SpendSense.SETTINGS.bigWantMinimum || c.times < NUDGE_MULTIPLE) return null;
+  return c;
+}
+
+// The same comparison with no threshold, so an approval can say why it was fine
+// ("1.7× your usual takeaway"). null for needs or when there's no history.
+function compareWithUsual(tx) {
   const label = labelPurchase(tx);
   if (label.type === "need") return null;
   const usual = usualSpend(label.group);
   if (!usual || !(usual.amount > 0)) return null;
-  const times = tx.amount / usual.amount;
-  if (tx.amount < SpendSense.SETTINGS.bigWantMinimum || times < NUDGE_MULTIPLE) return null;
-  return { times, usual: usual.amount, what: usual.what, fromStatement: usual.fromStatement };
+  return { times: tx.amount / usual.amount, usual: usual.amount, what: usual.what, fromStatement: usual.fromStatement };
 }
 
 // ---------- Upload ----------

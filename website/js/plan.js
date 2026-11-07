@@ -45,11 +45,21 @@ function formatRemaining(ms, hourMs) {
   return `${hours}h left`;
 }
 
-// A purchase matches a plan if the amount is within 10% of the planned price.
+// A purchase matches a plan if it's the same thing (PROJECT.md 2.3: "same shop") and the amount
+// is within 10% of the planned price. Same thing = a word in common, so a plan for "TV" matches
+// "Currys TV", but a plan for "Headphones £70" no longer lets any £70 purchase (Deliveroo) through.
+const nameWords = (text) => new Set(String(text).toUpperCase().split(/[^A-Z0-9]+/).filter((w) => w.length >= 2));
+function sameThing(planItem, shop) {
+  const shopWords = nameWords(shop);
+  return [...nameWords(planItem)].some((w) => shopWords.has(w));
+}
+
 function matchingPlan(tx) {
   const now = Date.now();
   return plans.find((p) =>
-    ["cooling", "ready"].includes(statusOf(p, now)) && Math.abs(p.price - tx.amount) <= p.price * 0.1);
+    ["cooling", "ready"].includes(statusOf(p, now)) &&
+    sameThing(p.item, tx.shop) &&
+    Math.abs(p.price - tx.amount) <= p.price * 0.1);
 }
 
 function finish(id, status) {

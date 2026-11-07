@@ -85,5 +85,12 @@ function checkPurchase(tx) {
     };
   }
 
+  // Say why it's fine, with the numbers, so nobody has to guess.
+  const usual = compareWithUsual(tx);
+  if (usual) {
+    // Round DOWN, so 1.99× shows as 1.9× and never looks like it reached the 2× line.
+    const times = (Math.floor(usual.times * 10) / 10).toFixed(1).replace(/\.0$/, "");
+    return { action: "allow", reason: `Within your pact: ${times}× your usual ${usual.what} (${money(Math.round(usual.usual * 100) / 100)}). Pact asks from ${NUDGE_MULTIPLE}×.` };
+  }
   return { action: "allow", reason: "Within your pact." };
 }
