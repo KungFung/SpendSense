@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 
 const page = (p) => fileURLToPath(new URL(`./website/${p}`, import.meta.url));
 
-// `npm run dev` serves website/ and opens the spending chart.
+// `npm run dev` serves website/ (so index.html works too) and opens the spending chart.
 // The chart reads statement_withinfo.csv from the repo root (imported in website/chart.jsx).
 export default defineConfig({
   root: "website",
@@ -13,6 +13,7 @@ export default defineConfig({
   build: {
     outDir: "../dist",
     emptyOutDir: true,
-    rollupOptions: { input: { main: page("index.html"), chart: page("chart.html") } },
+    // Only the chart is built. index.html loads plain scripts and is opened directly, no build needed.
+    rollupOptions: { input: { chart: page("chart.html") } },
   },
 });

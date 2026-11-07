@@ -53,7 +53,16 @@ function checkPurchase(tx) {
     return { action: "hold", rule: ruleById("late_night"), reason: usualText(unusual) };
   }
 
-  // 4. Big purchase that wasn't planned.
+  // 4. Third buy-now-pay-later plan (counted from the demo log; the real
+  //    version should count BNPL payments in the statement for this week).
+  if (tx.bnpl) {
+    const earlierBnpl = activity.filter((a) => a.bnpl && a.action !== "hold").length;
+    if (earlierBnpl >= 2) {
+      return { action: "hold", rule: ruleById("bnpl_stack"), reason: `This would be buy-now-pay-later plan number ${earlierBnpl + 1}.` };
+    }
+  }
+
+  // 5. Big purchase that wasn't planned.
   if (tx.amount >= 150) {
     return {
       action: "hold",
@@ -62,7 +71,7 @@ function checkPurchase(tx) {
     };
   }
 
-  // 5. Much bigger than this person usually spends on this kind of thing: a nudge, not a hold.
+  // 6. Much bigger than this person usually spends on this kind of thing: a nudge, not a hold.
   if (unusual) {
     return {
       action: "nudge",

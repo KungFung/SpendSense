@@ -18,7 +18,14 @@ const DEMO = {
     { id: "takeaways", icon: "🍔", text: "Nudge me when a takeaway is much bigger than usual", action: "Nudge" },
     { id: "rent_floor", icon: "🏠", text: "Never let my balance fall below £650 (rent money)", action: "Hold" },
   ],
-  // Purchases for the demo panel and the fake shop. Same shape as statement.js transactions.
+  // Category → need or want. Needs are never held.
+  categories: {
+    groceries: "need", bills: "need", transport: "need", fuel: "need",
+    pharmacy: "need", "car repair": "need",
+    takeaway: "want", clothes: "want", electronics: "want", gaming: "want",
+    gambling: "want", "going out": "want", other: "want",
+  },
+  // Purchases for the demo page and the fake shop. Same shape as statement.js transactions.
   // "time" is when the purchase happens; without it, Pact uses its own (demo) clock.
   purchases: [
     { id: "tesco", label: "🛒 Tesco £23.40 at 6:05pm", shop: "Tesco", amount: 23.4, category: "groceries", type: "need", time: "18:05" },
@@ -40,6 +47,7 @@ function save(key, value) {
 let plans = load("pact.plans", []);
 let kept = load("pact.kept", 0);
 let holds = load("pact.holds", []); // purchases Pact is holding, newest first
+let activity = load("pact.activity", []); // demo log: what Pact decided, newest first
 
 const $ = (id) => document.getElementById(id);
 const money = (n) => "£" + Number(n).toLocaleString("en-GB", Number(n) % 1
