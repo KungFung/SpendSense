@@ -34,7 +34,7 @@ const RESPONSE_SCHEMA = {
     type: "object",
     properties: {
       id: { type: "integer" },
-      label: { type: "string", enum: ["need", "want", "unsure"] },
+      label: { type: "string", enum: ["need", "want"] }, // the AI must choose one
       confidence: { type: "number" },
       reason: { type: "string" },
     },
@@ -52,7 +52,8 @@ function buildPrompt(items) {
     "You help a UK budgeting app sort bank transactions into needs and wants.",
     "need = essentials (food shopping, bills, rent, travel to work, medicine).",
     "want = nice-to-haves (takeaways, treats, games, fashion, entertainment).",
-    'If you genuinely cannot tell from the description, answer "unsure".',
+    "You MUST answer need or want for every transaction. If it could be either (Amazon, Argos, cash),",
+    "pick the more likely one for this amount and say why. When it is really a coin toss, choose want.",
     "Give a confidence from 0 to 1 and a short, kind reason (max 15 words).",
     "Return one entry per transaction, using the same id.",
     "",
@@ -64,7 +65,7 @@ function buildPrompt(items) {
 // Check one AI answer is sensible. Anything odd is thrown away.
 function cleanAnswer(answer, count) {
   if (!answer || !Number.isInteger(answer.id) || answer.id < 0 || answer.id >= count) return null;
-  if (!["need", "want", "unsure"].includes(answer.label)) return null;
+  if (!["need", "want"].includes(answer.label)) return null; // anything else is ignored
   const confidence = Math.min(1, Math.max(0, Number(answer.confidence) || 0));
   const reason = String(answer.reason || "").slice(0, 200);
   return { id: answer.id, label: answer.label, confidence, reason };

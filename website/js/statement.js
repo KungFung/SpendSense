@@ -132,26 +132,30 @@ function useStatement(fileName, csvText) {
 
   const count = (label) => classified.filter((t) => t.label === label).length;
   toast(`📄 ${fileName} loaded`,
-    `${parsed.length} transactions: ${count("need")} needs, ${count("want")} wants, ${count("unsure")} not sure. ` +
-    "Pact now uses your own spending to decide what's unusual.");
+    `${parsed.length} transactions read. ` +
+    (count("unsure") ? `The AI is checking ${count("unsure")} that our rules couldn't place.` : "Pact now uses your own spending to decide what's unusual."));
+  if (typeof notifyChart === "function") notifyChart({ type: "pact:statement-changed" });
   askAiAboutUnsure();
 }
 
-// ---------- AI for the "not sure" ones ----------
-// Sends ONLY the unsure payments' description + amount to the small helper inside `npm run dev`
+// ---------- AI decides the ones our rules can't ----------
+// Sends ONLY those payments' description + amount to the small helper inside `npm run dev`
 // (vite.config.mjs), which asks Gemini with the key in .env. The key never reaches this page.
-// No helper (file opened from disk), no key, or Gemini busy: the user just picks need/want.
-let aiStatus = ""; // shown on the Needs & wants page
+// The AI must answer need or want. If it can't be reached (file opened from disk, no key,
+// Gemini busy), Pact treats the payment as a want, the safe choice, and says so on that row.
+let aiChecking = false; // true while the AI is looking: those rows show "AI is checking…"
+let aiNote = "";        // one short line, only when the AI couldn't help
 
 async function askAiAboutUnsure() {
   const unsure = statement.classified.filter((t) => t.label === "unsure");
   if (unsure.length === 0) return;
   if (!location.protocol.startsWith("http")) {
-    setAiStatus("🤖 AI can sort the not-sure ones when Pact is opened with npm run dev. For now, pick need or want yourself.");
-    return;
+    return guessWants(unsure, "Treated as a want for now: the AI works when Pact runs with npm run dev.");
   }
-  setAiStatus(`🤖 AI is looking at ${unsure.length} not-sure payments…`);
   const forStatement = statement;
+  aiChecking = true;
+  aiNote = "";
+  renderStatementPage();
   try {
     const response = await fetch("api/classify-unsure", {
       method: "POST",
@@ -160,34 +164,42 @@ async function askAiAboutUnsure() {
     });
     const { ai, answers = [] } = await response.json();
     if (statement !== forStatement) return; // a different file was uploaded meanwhile
-    if (ai === "off") return setAiStatus("🤖 AI is off (no GEMINI_API_KEY in .env). Pick need or want yourself.");
-    if (ai !== "ok") return setAiStatus("🤖 AI couldn't help right now (Gemini is busy). Pick need or want yourself.");
+    aiChecking = false;
+    if (ai === "off") return guessWants(unsure, "Treated as a want: the AI is off (no GEMINI_API_KEY in .env).");
+    if (ai !== "ok") return guessWants(unsure, "Treated as a want: the AI was busy. Upload again to retry.");
 
-    let sorted = 0;
     answers.forEach((a) => {
       const t = unsure[a.id];
-      if (!t || t.label !== "unsure") return; // the user already chose
-      t.source = "ai";
-      t.reason = a.reason;
-      t.confidence = a.confidence;
-      if (a.label !== "unsure") { t.label = a.label; sorted += 1; }
+      if (!t || t.label !== "unsure" || !["need", "want"].includes(a.label)) return;
+      Object.assign(t, { label: a.label, source: "ai", reason: a.reason, confidence: a.confidence });
     });
-    statement.flags = SpendSense.detectImpulseSpending(statement.classified);
-    save("pact.statement", statement);
-    buildTransactions();
-    renderStatement();
-    const left = statement.classified.filter((t) => t.label === "unsure").length;
-    setAiStatus(`🤖 AI sorted ${sorted} of ${unsure.length} not-sure payments.` +
-      (left ? ` ${left} still can't be told apart (like cash or Amazon), so you decide.` : ""));
-    toast("🤖 AI sorted your not-sure payments", `${sorted} of ${unsure.length} now labelled need or want.`);
+    // Anything the AI skipped still gets an answer.
+    guessWants(unsure.filter((t) => t.label === "unsure"), "Treated as a want: the AI didn't answer for this one.", true);
+    const needs = unsure.filter((t) => t.label === "need").length;
+    toast("🤖 AI checked your payments", `${unsure.length} payments our rules couldn't place: ${needs} needs, ${unsure.length - needs} wants.`);
   } catch {
-    if (statement === forStatement) setAiStatus("🤖 AI isn't reachable. Pick need or want yourself.");
+    if (statement !== forStatement) return;
+    aiChecking = false;
+    guessWants(unsure, "Treated as a want: the AI isn't reachable right now.");
   }
 }
 
-function setAiStatus(text) {
-  aiStatus = text;
+// The safe fallback: count it as a want (wants are checked against the user's rules; needs never are).
+function guessWants(list, reason, quiet) {
+  list.forEach((t) => Object.assign(t, { label: "want", source: "guess", reason, confidence: 0.5 }));
+  const why = reason.replace(/^Treated as a want[^:]*: /, "");
+  if (list.length && !quiet) aiNote = `🤖 ${list.length} payments are treated as wants for now. ${why[0].toUpperCase()}${why.slice(1)}`;
+  statementChanged();
+}
+
+// Recalculate, save, and redraw everything that uses the statement (list, totals, chart).
+function statementChanged() {
+  statement.flags = SpendSense.detectImpulseSpending(statement.classified);
+  save("pact.statement", statement);
+  buildTransactions();
+  renderStatement();
   renderStatementPage();
+  if (typeof notifyChart === "function") notifyChart({ type: "pact:statement-changed" });
 }
 
 // The shared transactions list (shape at the top of this file).
@@ -242,7 +254,7 @@ function renderStatement() {
 }
 
 // ---------- "Needs & wants" page: every payment with its label ----------
-const LABEL_TEXT = { need: "Need", want: "Want", unsure: "Not sure" };
+const LABEL_TEXT = { need: "Need", want: "Want", unsure: "Checking" };
 let statementFilter = "all";
 
 // "2026-09-12" → "12 Sep"
@@ -269,8 +281,16 @@ const nice = (group) => group.replace(/\//g, " / ").replace(/^./, (c) => c.toUpp
 function whyText(t) {
   if (t.source === "you") return "You chose this";
   if (t.source === "ai") return `🤖 AI: ${t.reason}`;
-  if (t.label === "unsure") return t.group ? `${nice(t.group)}: could be either, you decide` : "We don't know this one yet, you decide";
+  if (t.source === "guess") return t.reason;
   return t.group ? nice(t.group) : t.reason;
+}
+
+// "Big purchases": wants the impulse check found much bigger than this person's usual
+// (impulse.js big_want: 3x their usual want and at least £30). The chart uses the same list.
+const paymentKey = (t) => `${t.date}|${t.description}|${t.amount}`;
+function bigPurchaseKeys() {
+  return new Set((statement?.flags || []).filter((f) => f.type === "big_want")
+    .flatMap((f) => f.transactions.map(paymentKey)));
 }
 
 function renderStatementPage() {
@@ -278,24 +298,33 @@ function renderStatementPage() {
   if (!results) return;
   results.hidden = !statement;
   $("ss-empty").hidden = Boolean(statement);
-  $("ss-ai").textContent = aiStatus;
-  $("ss-ai").hidden = !statement || !aiStatus;
+  $("ss-ai").textContent = aiNote;
+  $("ss-ai").hidden = !statement || !aiNote || aiChecking;
   $("statement-upload-page").textContent = statement ? "📄 Upload a different statement" : "📄 Upload a statement";
   if (!statement) return;
 
   const spending = statement.classified.filter((t) => t.label !== "income");
-  for (const label of ["need", "want", "unsure"]) {
+  const big = bigPurchaseKeys();
+  const isBig = (t) => big.has(paymentKey(t));
+  const total = (list) => money(Math.round(list.reduce((sum, t) => sum - t.amount, 0) * 100) / 100);
+  const checking = spending.filter((t) => t.label === "unsure");
+  for (const label of ["need", "want"]) {
     const list = spending.filter((t) => t.label === label);
-    $(`ss-${label}`).textContent = money(Math.round(list.reduce((sum, t) => sum - t.amount, 0) * 100) / 100);
-    $(`ss-${label}-n`).textContent = `${list.length} payments`;
+    $(`ss-${label}`).textContent = total(list);
+    $(`ss-${label}-n`).textContent = `${list.length} payments` + (aiChecking && checking.length && label === "want" ? ` · AI checking ${checking.length} more` : "");
   }
+  const bigList = spending.filter(isBig);
+  $("ss-big").textContent = total(bigList);
+  $("ss-big-n").textContent = bigList.length ? `${bigList.length} much bigger than your usual` : "None stood out";
 
   // Which payments the impulse checks flagged, with a short reason.
   const flagged = new Map();
   statement.flags.forEach((f) => f.transactions.forEach((t) => flagged.set(t.date + t.description, firstSentence(f.message))));
 
   document.querySelectorAll("#ss-filters button").forEach((b) => b.classList.toggle("active", b.dataset.filter === statementFilter));
-  const shown = spending.filter((t) => statementFilter === "all" || t.label === statementFilter);
+  const shown = spending.filter((t) =>
+    statementFilter === "all" ||
+    (statementFilter === "big" ? isBig(t) : t.label === statementFilter || (statementFilter === "want" && t.label === "unsure")));
 
   $("ss-rows").replaceChildren(...shown.map((t) => {
     const tr = document.createElement("tr");
@@ -306,28 +335,27 @@ function renderStatementPage() {
       tr.append(td);
       return td;
     };
+    const waiting = t.label === "unsure"; // only while the AI is still checking it
+    if (waiting) tr.className = "ss-checking";
     cell(shortDate(t.date));
     cell(displayName(t)).title = t.description; // full bank text on hover
     cell(money(-t.amount), "ss-amount num");
 
     const labelCell = cell("");
     const pill = document.createElement("span");
-    pill.className = "pill " + t.label;
-    pill.textContent = LABEL_TEXT[t.label];
+    pill.className = waiting ? "pill checking" : "pill " + t.label;
+    pill.textContent = waiting ? "Checking" : LABEL_TEXT[t.label];
     labelCell.append(pill);
-    if (t.label === "unsure") {
-      // The user decides: tap Need or Want.
-      const pick = document.createElement("div");
-      pick.className = "ss-pick";
-      pick.append(
-        button("Need", "", () => setLabel(t, "need")),
-        button("Want", "", () => setLabel(t, "want")));
-      labelCell.append(pick);
+    if (isBig(t)) {
+      const chip = document.createElement("span");
+      chip.className = "pill big";
+      chip.textContent = "Big purchase";
+      labelCell.append(" ", chip);
     }
 
-    const why = cell(whyText(t), "ss-why");
+    const why = cell(waiting ? "🤖 The AI is working out if this is a need or a want…" : whyText(t), "ss-why");
     const flag = flagged.get(t.date + t.description);
-    if (flag) {
+    if (flag && !waiting) {
       const note = document.createElement("span");
       note.className = "ss-flag";
       note.textContent = "⚠️ " + flag;
@@ -335,18 +363,6 @@ function renderStatementPage() {
     }
     return tr;
   }));
-}
-
-// The user's own answer wins, and it changes their "usual" spending too.
-function setLabel(t, label) {
-  t.label = label;
-  t.source = "you";
-  t.confidence = 1;
-  statement.flags = SpendSense.detectImpulseSpending(statement.classified);
-  save("pact.statement", statement);
-  buildTransactions();
-  renderStatement();
-  renderStatementPage();
 }
 
 document.querySelectorAll("#ss-filters button").forEach((b) => b.addEventListener("click", () => {
@@ -370,3 +386,4 @@ $("statement-file")?.addEventListener("change", async (e) => {
 buildTransactions();
 renderStatement();
 renderStatementPage();
+if (statement?.classified.some((t) => t.label === "unsure")) askAiAboutUnsure(); // e.g. saved by an older version

@@ -17,7 +17,8 @@ import { DEFAULT_STATEMENT_URL, readStatementFile, useStatement } from "./csvDat
 import "./fonts.css"; // RN House Sans for numbers, like the Pact site
 
 // One chart of spending over time, read from the bank statement, styled like the Pact site:
-// - bars: how much was spent in each day / week / month, split into flagged, pre-approved and other purchases
+// - bars: how much was spent in each day / week / month, split into needs, wants and big purchases
+//   (from Pact's labels on the uploaded statement), or flagged / pre-approved / other for the sample file
 // - a pale band behind each bar: the usual range of day-to-day spending from the anomaly detection.
 //   A bar above its band is exactly an unusual day.
 // - a moving average of day-to-day spending (dark line)
@@ -52,18 +53,26 @@ function rangeStart(range, last) {
   return new Date(last.getFullYear(), last.getMonth(), last.getDate() - (range.days - 1));
 }
 
-// Bar segments, bottom to top, in Pact's colours (lavender grey, purple, amber). Bills count as pre-approved.
+// Bar segments, bottom to top. With Pact's labels (purchase.segment): needs (green), wants (amber),
+// big purchases (dark purple: wants much bigger than the person's usual). Without labels (the sample
+// file): other (lavender grey), pre-approved (purple), flagged (amber). Only segments with data are shown.
 const SEGMENTS = [
+  { key: "need", label: "Needs", color: "var(--seg-need)" },
+  { key: "want", label: "Wants", color: "var(--seg-want)" },
+  { key: "big", label: "Big purchases", color: "var(--seg-big)" },
   { key: "other", label: "Other spending", color: "var(--seg-other)" },
   { key: "preApproved", label: "Pre-approved", color: "var(--seg-pre)" },
   { key: "flagged", label: "Flagged", color: "var(--seg-flag)" },
 ];
+const CHIP = { big: "Big purchase", flagged: "Flagged", preApproved: "Pre-approved" };
 
 const BILL_TYPES = new Set(["D/D", "S/O"]);
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const parseLocal = (s) => new Date(s.length === 10 ? `${s}T00:00` : s); // local time, not UTC
-const segmentOf = (p) => (p.flagged ? "flagged" : p.preApproved ? "preApproved" : "other");
+const segmentOf = (p) => p.segment ?? (p.flagged ? "flagged" : p.preApproved ? "preApproved" : "other");
+// Purchases worth listing in the tooltip: big purchases (or flagged / pre-approved ones in the sample).
+const isNotable = (p) => ["big", "flagged", "preApproved"].includes(segmentOf(p));
 const sumOf = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 
 // Start of the period that a date falls in. Weeks start on Monday, like UK bank apps.
@@ -110,9 +119,7 @@ function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lin
   for (let d = first; d <= last; d = nextPeriod(d, scale)) {
     byKey.set(d.getTime(), {
       start: d,
-      other: 0,
-      preApproved: 0,
-      flagged: 0,
+      ...Object.fromEntries(SEGMENTS.map((s) => [s.key, 0])),
       bills: 0,
       dayToDay: 0, // spending excluding bills: what the band and line measure
       items: [],
@@ -143,7 +150,7 @@ function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lin
     const known = lines && b.days.length > 0 && b.days.every((d) => d.baseline != null);
     return {
       ...b,
-      total: b.other + b.preApproved + b.flagged,
+      total: sumOf(SEGMENTS, (s) => b[s.key]),
       expected: known ? sumOf(b.days, (d) => d.baseline) : null,
       usualLow: known ? sumOf(b.days, (d) => d.usualLow) : null,
       usualHigh: known ? sumOf(b.days, (d) => d.usualHigh) : null,
@@ -176,7 +183,8 @@ function linePath(points) {
 // Loads the statement CSV and works out the analysis from it, then draws the chart.
 // Pass `data` (the output of analyseStatement) to skip loading the file.
 // The user can also upload their own statement CSV; it's read in the browser and never sent anywhere.
-export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_URL, initialRange = "all", initialScale = "week" }) {
+// sourceName: shown under the chart ("From statement.csv"). hideUpload: Pact's page has its own upload.
+export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_URL, initialRange = "all", initialScale = "week", sourceName, hideUpload = false }) {
   const [upload, setUpload] = useState(null); // { name, data, id } once the user has uploaded a file
   const [uploadError, setUploadError] = useState(null);
   const loaded = useStatement(data ? null : statementUrl);
@@ -190,7 +198,7 @@ export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_U
       setUploadError(e.message || String(e));
     }
   };
-  const uploadControls = { fileName: upload?.name, error: uploadError, onFile, onReset: () => {
+  const uploadControls = { hidden: hideUpload, sourceName, fileName: upload?.name, error: uploadError, onFile, onReset: () => {
       setUpload(null);
       setUploadError(null);
     },
@@ -215,9 +223,12 @@ export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_U
 }
 
 // "Upload CSV" button, with the uploaded file's name (and a way back to the sample data) or an error.
-function UploadButton({ fileName, error, onFile, onReset }) {
+function UploadButton({ hidden, sourceName, fileName, error, onFile, onReset }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
+  if (hidden) {
+    return sourceName ? <div className="sc-foot-right"><span className="sc-source">From <b>{sourceName}</b></span></div> : null;
+  }
   return (
     <div className="sc-foot-right">
       {error && <span className="sc-upload-error" role="alert">Couldn't use that file: {error}.</span>}
@@ -437,8 +448,9 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
               <tr>
                 <th scope="col">{scaleInfo.label}</th>
                 <th scope="col" className="num">Spent</th>
-                <th scope="col" className="num">Flagged</th>
-                <th scope="col" className="num">Pre-approved</th>
+                {presentSegments.map((s) => (
+                  <th key={s.key} scope="col" className="num">{s.label}</th>
+                ))}
                 {hasBand && <th scope="col" className="num">Usual range</th>}
                 {hasAverage && <th scope="col" className="num">Average</th>}
                 {markUnusual && <th scope="col">Unusual</th>}
@@ -449,8 +461,9 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
                 <tr key={b.start.getTime()}>
                   <td>{periodLabel(b.start, scale)}</td>
                   <td className="num">{pounds(b.total)}</td>
-                  <td className="num">{b.flagged ? pounds(b.flagged) : "–"}</td>
-                  <td className="num">{b.preApproved ? pounds(b.preApproved) : "–"}</td>
+                  {presentSegments.map((s) => (
+                    <td key={s.key} className="num">{b[s.key] ? pounds(b[s.key]) : "–"}</td>
+                  ))}
                   {hasBand && <td className="num">{b.usualHigh == null ? "–" : `${poundsShort(b.usualLow)}–${poundsShort(b.usualHigh)}`}</td>}
                   {hasAverage && <td className="num">{b.average == null ? "–" : pounds(b.average)}</td>}
                   {markUnusual && (
@@ -693,7 +706,7 @@ function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, wi
     };
   }, [anchorRef, host, left, top, width, b]);
   // An hour only has a few purchases, so list them all; longer periods list just the notable ones.
-  const notable = scale === "hour" ? b.items : b.items.filter((p) => p.flagged || p.preApproved);
+  const notable = scale === "hour" ? b.items : b.items.filter(isNotable);
   const segments = [...SEGMENTS].reverse().filter((s) => b[s.key] > 0);
   return createPortal(
     <div className="spend-chart" style={{ display: "contents" }}>
@@ -757,9 +770,7 @@ function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, wi
             <div key={k} className="sc-row">
               <span>
                 {scale === "hour" && <span className="sc-time">{p.date.slice(11, 16)}</span>}
-                {(p.flagged || p.preApproved) && (
-                  <b className={`sc-chip ${p.flagged ? "flag" : "pre"}`}>{p.flagged ? "Flagged" : "Pre-approved"}</b>
-                )}
+                {CHIP[segmentOf(p)] && <b className={`sc-chip ${segmentOf(p)}`}>{CHIP[segmentOf(p)]}</b>}
                 {p.description}
               </span>
               <span>{pounds(p.amount)}</span>

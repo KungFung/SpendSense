@@ -70,6 +70,7 @@ const LIGHT = `
   --surface: #ffffff; --surface-2: #f6f2fa; --ink: #1d1d1f; --ink-2: #6b6b76; --line: #e7e1ee; --num: #383838;
   --accent: #42145f; --accent-2: #5a287d; --accent-ink: #ffffff; --accent-soft: #ece4f3;
   --seg-other: #b3a8c0; --seg-pre: #5a287d; --seg-flag: #b25e00; --band: #ece4f3; --wkend: #faf7fc;
+  --seg-need: #1a7f4b; --seg-want: #e0a046; --seg-big: #42145f; --need-bg: #e8f5ee; --want-bg: #fff4e5; --big-bg: #ece4f3;
   --mark: #1d1d1f; --flag-bg: #fff4e5; --pre-bg: #ece4f3; --alert: #b3261e;
   --shadow: 0 1px 3px rgba(42, 12, 63, 0.06); --tip-shadow: 0 10px 30px rgba(42, 12, 63, 0.18);
   color-scheme: light;`;
@@ -77,6 +78,7 @@ const NIGHT = `
   --surface: #21152f; --surface-2: #2e2040; --ink: #eeeeee; --ink-2: #a99bb8; --line: #3d2c52; --num: #eeeeee;
   --accent: #d9c2ef; --accent-2: #d9c2ef; --accent-ink: #21152f; --accent-soft: #2e2040;
   --seg-other: #6a5e78; --seg-pre: #b48ae0; --seg-flag: #d9873a; --band: #33244a; --wkend: #261a36;
+  --seg-need: #4cb782; --seg-want: #e5a95a; --seg-big: #c9a3ee; --need-bg: #173426; --want-bg: #3a2712; --big-bg: #33244a;
   --mark: #eeeeee; --flag-bg: #3a2712; --pre-bg: #33244a; --alert: #f2a09a;
   --shadow: none; --tip-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   color-scheme: dark;`;
@@ -176,8 +178,9 @@ body.night .spend-chart {${NIGHT}
 .spend-chart .sc-row > span:last-child { font-family: var(--numfont); color: var(--num); white-space: nowrap; }
 .spend-chart .sc-note { color: var(--ink-2); font-size: 12.5px; }
 .spend-chart .sc-chip { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 6px; white-space: nowrap; }
-.spend-chart .sc-chip.flag { background: var(--flag-bg); color: var(--seg-flag); }
-.spend-chart .sc-chip.pre { background: var(--pre-bg); color: var(--seg-pre); }
+.spend-chart .sc-chip.flag, .spend-chart .sc-chip.flagged { background: var(--flag-bg); color: var(--seg-flag); }
+.spend-chart .sc-chip.pre, .spend-chart .sc-chip.preApproved { background: var(--pre-bg); color: var(--seg-pre); }
+.spend-chart .sc-chip.big { background: var(--big-bg); color: var(--seg-big); }
 .spend-chart .sc-pill { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; margin-bottom: 2px; padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; background: var(--surface-2); color: var(--ink); }
 
 /* footer, buttons and table */

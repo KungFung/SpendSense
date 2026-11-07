@@ -22,7 +22,9 @@ const tx = (date, description, amount, category = null) => ({
 
 test("loader turns CSV rows into the shared format, with null for unknowns", () => {
   const rows = parseStatementCsv("Date,Description,Amount\n2026-09-01,Tesco,-45.00\n2026-09-02,ACME SALARY,2000");
-  assert.deepEqual(rows[0], { date: "2026-09-01", description: "Tesco", amount: -45, type: "expense", category: null, merchant: null });
+  assert.deepEqual(rows[0], {
+    date: "2026-09-01", description: "Tesco", amount: -45, type: "expense", category: null, merchant: null, time: null, bankType: null,
+  });
   assert.equal(rows[1].type, "income");
 });
 
@@ -32,6 +34,8 @@ test("loader copes with the team's real statement format (quoted commas, '05 Nov
   assert.equal(row.date, "2026-11-03");
   assert.equal(row.description, "3167 03Nov26 C , DELIVEROO , GB");
   assert.equal(row.amount, -33.08);
+  assert.equal(row.time, "13:11"); // kept for the spending chart
+  assert.equal(row.bankType, "POS");
 });
 
 test("the sample statement loads with ~50 transactions", () => {
@@ -132,6 +136,14 @@ test("a broken AI reply is ignored, not crashed on", async () => {
   const weird = JSON.stringify([{ id: 0, label: "luxury", confidence: 5, reason: "?" }, { id: 99, label: "want" }]);
   const results2 = await classifyTransactions([tx("2026-09-01", "AMAZON", -20)], { client: fakeClient(weird) });
   assert.equal(results2[0].label, "unsure");
+});
+
+test("the AI must pick need or want: an 'unsure' answer is thrown away", async () => {
+  const reply = JSON.stringify([{ id: 0, label: "unsure", confidence: 0.5, reason: "Could be anything" }]);
+  const seen = {};
+  const [result] = await classifyTransactions([tx("2026-09-01", "AMAZON", -20)], { client: fakeClient(reply, seen) });
+  assert.equal(result.label, "unsure"); // the website then treats it as a want
+  assert.deepEqual(seen.request.config.responseJsonSchema.items.properties.label.enum, ["need", "want"]);
 });
 
 test("an AI error (e.g. no internet) is caught", async () => {

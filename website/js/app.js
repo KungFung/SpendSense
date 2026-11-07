@@ -236,6 +236,8 @@ try {
 // components/csvData.js, parseStatement) and chart.jsx adds them on top of the statement.
 // flagged: Pact had concerns (nudge, emergency release) · preApproved: planned in advance.
 function recordSpend(shop, amount, date, { flagged = false, preApproved = false } = {}) {
+  // For the chart's Needs / Wants / Big purchases colours. Nudged or held, then bought anyway = big.
+  const segment = flagged ? "big" : labelPurchase({ shop, amount }).type === "need" ? "need" : "want";
   const d = new Date(date);
   const pad = (n) => String(n).padStart(2, "0");
   spent.push({
@@ -246,6 +248,7 @@ function recordSpend(shop, amount, date, { flagged = false, preApproved = false 
     balance: null,
     flagged,
     preApproved,
+    segment,
   });
   save("pact.spent", spent);
   notifyChart({ type: "pact:purchases-changed" });
@@ -322,7 +325,7 @@ function showCustomType() {
     ? `Pact thinks: NEED${kind}. Needs are always let through.`
     : label.type === "want"
       ? `Pact thinks: WANT${kind}. Pact checks it against your rules and your usual spending.`
-      : `Pact thinks: NOT SURE${kind}. Treated as a want to be safe.`;
+      : `Pact thinks: WANT${kind}. This shop sells both, so Pact treats it as a want to be safe.`;
 }
 ["custom-shop", "custom-amount", "custom-category"].forEach((id) => $(id).addEventListener("input", showCustomType));
 showCustomType();

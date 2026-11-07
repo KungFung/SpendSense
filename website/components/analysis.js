@@ -38,13 +38,14 @@ export function analyseStatement(transactions, settings = DETECTION_SETTINGS) {
 
   const purchases = transactions
     .filter((t) => t.value < 0)
-    .map(({ date, type, description, value, flagged, preApproved }) => ({
+    .map(({ date, type, description, value, flagged, preApproved, segment }) => ({
       date,
       type,
       description,
       amount: -value,
       flagged,
       preApproved,
+      segment, // "need" | "want" | "big" when Pact labelled the statement (chart.jsx), else undefined
     }));
 
   if (transactions.length === 0) return { purchases, days: [], anomalies: [] };

@@ -77,6 +77,7 @@ function parseStatementCsv(csvText) {
   const descriptionCol = col("description");
   const amountCol = col("amount", "value");
   const categoryCol = col("category");
+  const bankTypeCol = col("type"); // the bank's own Type column (POS, D/D, S/O...), if there is one
 
   return lines.slice(1).map((line) => {
     const cells = splitCsvLine(line);
@@ -91,6 +92,8 @@ function parseStatementCsv(csvText) {
       type: !Number.isFinite(amount) ? null : amount > 0 ? "income" : "expense",
       category: categoryCol >= 0 && cells[categoryCol] ? cells[categoryCol] : null,
       merchant: null, // the real parser may fill this in later
+      time: (String(cells[dateCol] || "").match(/\b(\d{1,2}):(\d{2})\b/) || [])[0]?.padStart(5, "0") ?? null, // "06:00" or null
+      bankType: bankTypeCol >= 0 && cells[bankTypeCol] ? cells[bankTypeCol] : null,
     };
   });
 }
