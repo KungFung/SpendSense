@@ -1,6 +1,6 @@
 import React from "react";
 
-// Helpers shared by SpendingChart and SpendingTrendChart.
+// Helpers and styles for SpendingChart.
 
 // Anomaly markers use shape (not colour) so they don't clash with the bar colours.
 // Ordered from most to least serious.
@@ -64,7 +64,7 @@ export function ChartMessage({ title, error }) {
   );
 }
 
-// Styles for both charts, scoped under .spend-chart.
+// Styles for the chart, scoped under .spend-chart.
 export const CHART_CSS = `
 .spend-chart {
   box-sizing: border-box;
@@ -102,7 +102,6 @@ export const CHART_CSS = `
 .spend-chart .sc-grid { stroke: var(--sc-grid); stroke-width: 1; }
 .spend-chart .sc-baseline { stroke: var(--sc-axis); stroke-width: 1; }
 .spend-chart .sc-tick { fill: var(--sc-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.spend-chart .sc-flag { fill: var(--sc-ink); font-size: 12px; font-weight: 700; pointer-events: none; }
 .spend-chart .sc-tip {
   position: absolute; z-index: 1; pointer-events: none;
   background: #fff; border: 1px solid rgba(11,11,11,0.10); border-radius: 10px;
@@ -110,12 +109,9 @@ export const CHART_CSS = `
 }
 .spend-chart .sc-tip-period { color: var(--sc-ink-2); }
 .spend-chart .sc-tip-total { font-size: 18px; font-weight: 700; margin: 2px 0 4px; }
-.spend-chart .sc-tip-status { display: flex; align-items: center; color: var(--sc-ink-2); margin-bottom: 4px; }
 .spend-chart .sc-tip-item { display: flex; justify-content: space-between; gap: 8px; color: var(--sc-ink); }
 .spend-chart .sc-legend-mark { margin-right: 6px; flex: none; }
 .spend-chart .sc-mark-count { fill: var(--sc-accent); font-size: 10px; font-weight: 700; }
-.spend-chart .sc-tip-anoms { border-top: 1px solid var(--sc-grid); margin-top: 8px; padding-top: 6px; }
-.spend-chart .sc-tip-heading { font-weight: 600; margin-bottom: 4px; }
 .spend-chart .sc-tip-anom { margin-bottom: 4px; }
 .spend-chart .sc-tip-anom-title { display: flex; align-items: center; gap: 6px; }
 .spend-chart .sc-tip-anom-detail { color: var(--sc-ink-2); font-size: 12px; }
@@ -128,5 +124,4 @@ export const CHART_CSS = `
 .spend-chart .sc-table th, .spend-chart .sc-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--sc-grid); }
 .spend-chart .sc-table th { color: var(--sc-ink-2); font-weight: 600; position: sticky; top: 0; background: var(--sc-surface); }
 .spend-chart .sc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.spend-chart .sc-cell-status { display: inline-flex; align-items: center; }
 `;
