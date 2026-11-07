@@ -1,0 +1,9 @@
+/* NatWest's RN House Sans, used by the Pact site for numbers (same font files as website/css/style.css).
+   Imported from SpendingChart.jsx so Vite bundles the font files into the build. */
+@font-face {
+  font-family: "RN House Sans";
+  src: url("../fonts/rn-house-sans-regular.woff2") format("woff2"),
+       url("../fonts/rn-house-sans-regular.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}
