@@ -40,12 +40,6 @@
 
     <div class="spacer"></div>
 
-    <div class="demo">
-      <strong>Demo controls</strong>
-      <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1h = 1s)</label>
-      <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
-      <button class="link" id="demo-reset" type="button">Reset demo</button>
-    </div>
   </aside>
 
   <!-- ================= MAIN ================= -->
@@ -63,7 +57,7 @@
       <div class="streak span-2">
         <div>
           <div class="streak-main">
-            <span class="streak-num">🔥 <span id="streak-days"></span></span>
+            <span class="streak-num">🔥 <span class="num" id="streak-days"></span></span>
             <span class="streak-label">day streak</span>
           </div>
           <div class="streak-sub" id="streak-sub"></div>
@@ -75,8 +69,8 @@
       </div>
 
       <div class="wins">
-        <div class="card win"><strong id="protected"></strong><span>protected by your pact this month</span></div>
-        <div class="card win"><strong id="kept-home"></strong><span>kept by changing your mind</span></div>
+        <div class="card win"><strong class="num" id="protected"></strong><span>protected by your pact this month</span></div>
+        <div class="card win"><strong class="num" id="kept-home"></strong><span>kept by changing your mind</span></div>
       </div>
 
       <div class="card status">
@@ -84,7 +78,7 @@
           <div class="icon">🛡️</div>
           <div>
             <h3><span class="dot"></span><span id="status-title">You're calm today</span></h3>
-            <p>Your pact is active · 4 rules</p>
+            <p>Your pact is active · <span class="num" id="rule-count"></span> rules</p>
           </div>
         </div>
       </div>
@@ -99,20 +93,21 @@
         </div>
       </div>
 
-      <div class="card hold" id="hold-card">
+      <div class="card hold" id="hold-card" hidden>
         <div class="card-head">
           <div class="icon">⏸️</div>
           <div>
-            <h3>1 purchase on hold</h3>
-            <p>Klarna × ASOS · £340 · decide in 14h<br />Rule: "Over £50 after midnight"</p>
+            <h3 id="hold-title"></h3>
+            <p><span class="num" id="hold-line"></span><br /><span id="hold-rule-line"></span></p>
           </div>
         </div>
         <div class="actions">
-          <button class="secondary" id="hold-plan" type="button">Plan it instead</button>
-          <button id="hold-cancel" type="button">Cancel it</button>
+          <button class="secondary" id="card-hold-open" type="button">Review</button>
+          <button class="secondary" id="card-hold-plan" type="button">Plan it</button>
+          <button id="card-hold-cancel" type="button">Cancel it</button>
         </div>
       </div>
-      <div class="card" id="hold-done" hidden>
+      <div class="card" id="hold-done">
         <div class="card-head">
           <div class="icon">✅</div>
           <div>
@@ -144,9 +139,9 @@
         <h3>Plan a big purchase</h3>
         <p>Tell Pact in advance. After a short cooling-off period, it goes through without a hold.</p>
         <div class="tiers">
-          <div class="tier"><strong>24 hours</strong>under £100</div>
-          <div class="tier"><strong>48 hours</strong>£100 – £499</div>
-          <div class="tier"><strong>72 hours</strong>£500 and over</div>
+          <div class="tier"><strong class="num">24 hours</strong>under £100</div>
+          <div class="tier"><strong class="num">48 hours</strong>£100 – £499</div>
+          <div class="tier"><strong class="num">72 hours</strong>£500 and over</div>
         </div>
         <form id="plan-form">
           <label>
@@ -193,6 +188,51 @@
       </div>
     </section>
   </main>
+
+  <!-- ================= HOLD SCREEN ================= -->
+  <div class="overlay" id="hold-overlay" hidden>
+    <div class="hold-screen">
+      <p class="hold-kicker">⏸️ Your Pact is holding</p>
+      <div class="hold-amount num" id="hold-amount"></div>
+      <p class="hold-shop" id="hold-shop"></p>
+
+      <div class="voice">
+        <button class="voice-play" id="voice-play" type="button" aria-label="Play your message">▶</button>
+        <div>
+          <strong>A message from you · 3 Oct</strong>
+          <p>"Hey. It's you. Sleep on it. You'll thank me in the morning."</p>
+        </div>
+      </div>
+
+      <p class="hold-rule" id="hold-rule"></p>
+      <p class="hold-reason" id="hold-reason"></p>
+
+      <div class="hold-actions">
+        <button class="ghost" id="hold-wait" type="button">⏳ Wait 24h</button>
+        <button class="ghost" id="hold-plan" type="button">📅 Plan it instead</button>
+        <button id="hold-cancel" type="button">❌ Cancel it</button>
+      </div>
+      <div class="hold-secondary">
+        <button class="link" id="hold-sam" type="button">💬 Message Sam</button>
+        <button class="link" id="hold-emergency" type="button">🚨 This is an emergency</button>
+      </div>
+    </div>
+  </div>
+  <audio id="voice-note" src="audio/voice-note.mp3" preload="auto"></audio>
+
+  <!-- ================= DEMO PANEL ================= -->
+  <button class="demo-toggle" id="demo-toggle" type="button">🎬 Demo</button>
+  <div class="demo-panel" id="demo-panel" hidden>
+    <strong>Demo controls</strong>
+    <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1h = 1s)</label>
+    <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
+    <button type="button" id="open-shop">🛍️ Open the shop window</button>
+    <strong>Simulate a purchase</strong>
+    <div class="presets" id="presets"></div>
+    <button class="link" id="demo-reset" type="button">Reset demo</button>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
 
   <!-- Load order matters: core first, app last. Add your file between them. -->
   <script src="js/core.js"></script>

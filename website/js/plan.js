@@ -45,6 +45,13 @@ function formatRemaining(ms, hourMs) {
   return `${hours}h left`;
 }
 
+// A purchase matches a plan if the amount is within 10% of the planned price.
+function matchingPlan(tx) {
+  const now = Date.now();
+  return plans.find((p) =>
+    ["cooling", "ready"].includes(statusOf(p, now)) && Math.abs(p.price - tx.amount) <= p.price * 0.1);
+}
+
 function finish(id, status) {
   const plan = plans.find((p) => p.id === id);
   if (!plan) return;
@@ -66,10 +73,10 @@ function button(label, className, onClick) {
   return b;
 }
 
-function planItem(plan, now) {
-  const status = statusOf(plan, now);
-  const progress = Math.min(1, (now - plan.createdAt) / (plan.readyAt - plan.createdAt));
-
+// ---------- Plan cards ----------
+// Cards are rebuilt only when a plan's status changes; the countdown and bar are
+// updated in place, so buttons aren't replaced while someone is clicking them.
+function buildPlanItem(plan, status) {
   const li = document.createElement("li");
   li.className = "plan " + (status === "ready" ? "ready" : status === "cooling" ? "" : "done");
 
@@ -78,28 +85,16 @@ function planItem(plan, now) {
   const name = document.createElement("span");
   name.textContent = plan.item;
   const price = document.createElement("span");
+  price.className = "num";
   price.textContent = money(plan.price);
   top.append(name, price);
 
   const text = document.createElement("div");
   text.className = "plan-status";
-  if (status === "cooling") {
-    const prefix = progress >= 0.5 ? "Halfway there. Still want it? " : "Cooling off · ";
-    text.textContent = prefix + formatRemaining(plan.readyAt - now, plan.hourMs);
-  } else if (status === "ready") {
-    text.textContent = `✅ Ready. You can buy it without a hold for ${READY_WINDOW_DAYS} days.`;
-  } else if (status === "bought") {
-    text.textContent = "Bought, planned not impulsive 👏";
-  } else if (status === "cancelled") {
-    text.textContent = "You changed your mind. Money kept.";
-  } else {
-    text.textContent = "Plan expired. Plan it again if you still want it.";
-  }
 
   const bar = document.createElement("div");
   bar.className = "bar";
   const fill = document.createElement("div");
-  fill.style.width = (status === "cooling" || status === "ready" ? progress * 100 : 100) + "%";
   bar.append(fill);
 
   li.append(top, text, bar);
@@ -111,5 +106,50 @@ function planItem(plan, now) {
     actions.append(button("I don't want it anymore", "secondary", () => finish(plan.id, "cancelled")));
     li.append(actions);
   }
-  return li;
+  return { li, status, text, fill };
+}
+
+function updatePlanItem(node, plan, status, now) {
+  const progress = Math.min(1, (now - plan.createdAt) / (plan.readyAt - plan.createdAt));
+  let text;
+  if (status === "cooling") {
+    const prefix = progress >= 0.5 ? "Halfway there. Still want it? " : "Cooling off · ";
+    text = prefix + formatRemaining(plan.readyAt - now, plan.hourMs);
+  } else if (status === "ready") {
+    text = `✅ Ready. You can buy it without a hold for ${READY_WINDOW_DAYS} days.`;
+  } else if (status === "bought") {
+    text = "Bought, planned not impulsive 👏";
+  } else if (status === "cancelled") {
+    text = "You changed your mind. Money kept.";
+  } else {
+    text = "Plan expired. Plan it again if you still want it.";
+  }
+  if (node.text.textContent !== text) node.text.textContent = text;
+  node.fill.style.width = (status === "cooling" || status === "ready" ? progress * 100 : 100) + "%";
+}
+
+const planNodes = new Map(); // list element → Map(plan id → card)
+
+function syncPlanList(ul, list, now) {
+  if (!planNodes.has(ul)) planNodes.set(ul, new Map());
+  const nodes = planNodes.get(ul);
+
+  const wanted = list.map((plan) => {
+    const status = statusOf(plan, now);
+    let node = nodes.get(plan.id);
+    if (!node || node.status !== status) {
+      node = buildPlanItem(plan, status);
+      nodes.set(plan.id, node);
+    }
+    updatePlanItem(node, plan, status, now);
+    return node.li;
+  });
+
+  const ids = new Set(list.map((p) => p.id));
+  for (const id of nodes.keys()) if (!ids.has(id)) nodes.delete(id);
+
+  const current = [...ul.children];
+  if (current.length !== wanted.length || current.some((el, i) => el !== wanted[i])) {
+    ul.replaceChildren(...wanted);
+  }
 }

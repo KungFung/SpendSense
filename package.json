@@ -2,8 +2,11 @@
   "name": "spendsense",
   "version": "1.0.0",
   "private": true,
-  "description": "Pact / SpendSense - need vs want classifier and impulse spending flags",
+  "description": "Pact / SpendSense",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "classify": "node src/classifier/run.js",
     "test": "node --test \"src/classifier/*.test.js\""
   },
@@ -11,6 +14,12 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@google/genai": "^3.0.0"
+    "@google/genai": "^3.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "vite": "^8.3.6"
   }
 }
