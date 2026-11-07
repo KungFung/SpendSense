@@ -224,26 +224,31 @@ button.ghost { background: rgba(255,255,255,0.1); color: #fff; border: 1.5px sol
 }
 .toast p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
 
-/* ---------- Demo panel ---------- */
-.demo-toggle {
-  position: fixed; right: 20px; bottom: 20px; z-index: 40;
-  box-shadow: 0 8px 24px rgba(42, 12, 63, 0.3);
+/* ---------- Demo page ---------- */
+.toggles { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+label.inline, .toggles label { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
+button.wide { width: 100%; margin-top: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+select, input[type="time"] {
+  padding: 11px 12px; border: 1px solid #d6cde0; border-radius: 10px; font-size: 16px;
+  font-family: inherit; background: #fff; color: var(--text);
 }
-.demo-panel {
-  position: fixed; right: 20px; bottom: 76px; z-index: 40; width: 300px;
-  display: flex; flex-direction: column; gap: 10px;
-  background: var(--card); color: var(--text); border-radius: var(--radius); padding: 16px;
-  box-shadow: 0 16px 40px rgba(42, 12, 63, 0.25); font-size: 14px;
-}
-.demo-panel strong { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
-.demo-panel label { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
-.presets { display: flex; flex-direction: column; gap: 6px; }
+label small.hint { font-size: 12px; font-weight: 400; }
+.presets { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 button.preset {
   background: var(--purple-50); color: var(--text); border-radius: 10px;
-  padding: 9px 12px; font-size: 13px; font-weight: 500; text-align: left;
+  padding: 11px 14px; font-size: 14px; font-weight: 500; text-align: left;
 }
 button.preset:hover { background: var(--purple-100); }
-.demo-panel .link { color: var(--purple-600); font-size: 13px; }
+.activity { margin-top: 12px; gap: 0; }
+.activity li { padding: 10px 0; border-top: 1px solid var(--line); }
+.activity li:first-child { border-top: 0; }
+.activity-top { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 14px; }
+.activity small { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+.result-badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.result-badge.allow { background: var(--green-50); color: var(--green); }
+.result-badge.nudge { background: var(--amber-50); color: var(--amber); }
+.result-badge.hold { background: var(--purple-100); color: var(--purple-800); }
 
 /* ---------- Night theme (after 11pm, or demo clock) ---------- */
 body.night { background: #140b1f; color: #eee; }
@@ -257,13 +262,15 @@ body.night .tier strong, body.night .num { color: #eee; }
 body.night .risk { order: -1; grid-column: span 3; }
 body.night .hold, body.night #hold-done { grid-column: span 2; }
 body.night button.secondary { color: #d9c2ef; border-color: #d9c2ef; }
-body.night input { background: #2e2040; color: #eee; border-color: #3d2c52; }
+body.night input, body.night select { background: #2e2040; color: #eee; border-color: #3d2c52; }
+body.night button.preset { background: #2e2040; color: #eee; }
+body.night .activity li { border-color: #2e2040; }
 
 /* ---------- Smaller screens ---------- */
 @media (max-width: 1000px) {
   body { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; }
   .main { padding: 24px 20px; }
-  .grid-home, .grid-2, .rules { grid-template-columns: 1fr; }
+  .grid-home, .grid-2, .rules, .form-row { grid-template-columns: 1fr; }
   .span-2, .span-3, body.night .risk, body.night .hold, body.night #hold-done { grid-column: auto; }
 }

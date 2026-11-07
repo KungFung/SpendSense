@@ -45,7 +45,16 @@ function checkPurchase(tx) {
     return { action: "hold", rule: ruleById("late_night") };
   }
 
-  // 4. Big purchase that wasn't planned.
+  // 4. Third buy-now-pay-later plan (counted from the demo log; the real
+  //    version should count BNPL payments in the statement for this week).
+  if (tx.bnpl) {
+    const earlierBnpl = activity.filter((a) => a.bnpl && a.action !== "hold").length;
+    if (earlierBnpl >= 2) {
+      return { action: "hold", rule: ruleById("bnpl_stack"), reason: `This would be buy-now-pay-later plan number ${earlierBnpl + 1}.` };
+    }
+  }
+
+  // 5. Big purchase that wasn't planned.
   if (tx.amount >= 150) {
     return {
       action: "hold",
@@ -54,7 +63,7 @@ function checkPurchase(tx) {
     };
   }
 
-  // 5. Unusually big takeaway.
+  // 6. Unusually big takeaway.
   if (tx.category === "takeaway" && tx.amount > 3 * DEMO.usualTakeaway) {
     const times = Math.round(tx.amount / DEMO.usualTakeaway);
     return {

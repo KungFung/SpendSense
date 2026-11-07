@@ -102,7 +102,7 @@ function renderRules() {
 }
 
 // ---------- Navigation ----------
-const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact" };
+const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact", demo: "Demo controls" };
 
 function showTab(name) {
   document.querySelectorAll(".nav [data-tab]").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
@@ -163,7 +163,49 @@ function handlePurchase(purchase) {
     if (decision.plan) finish(decision.plan.id, "bought");
     toast(`✅ ${label}: approved`, decision.reason);
   }
+  logActivity(tx, decision);
   return { action: decision.action, reason: decision.reason ?? "" };
+}
+
+const ACTION_LABELS = { allow: "Approved", nudge: "Nudge", hold: "Held" };
+
+function logActivity(tx, decision) {
+  const time = new Date(tx.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  activity.unshift({
+    shop: tx.shop,
+    amount: tx.amount,
+    time,
+    bnpl: Boolean(tx.bnpl),
+    action: decision.action,
+    reason: decision.reason || decision.rule?.text || "",
+  });
+  activity = activity.slice(0, 20);
+  save("pact.activity", activity);
+  renderActivity();
+}
+
+function renderActivity() {
+  $("activity-empty").hidden = activity.length > 0;
+  $("activity").replaceChildren(...activity.map((a) => {
+    const li = document.createElement("li");
+    const top = document.createElement("div");
+    top.className = "activity-top";
+    const name = document.createElement("span");
+    name.textContent = `${a.shop} · ${a.time}`;
+    const right = document.createElement("span");
+    const amount = document.createElement("span");
+    amount.className = "num";
+    amount.textContent = money(a.amount);
+    const badge = document.createElement("span");
+    badge.className = "result-badge " + a.action;
+    badge.textContent = ACTION_LABELS[a.action];
+    right.append(amount, " ", badge);
+    top.append(name, right);
+    const reason = document.createElement("small");
+    reason.textContent = a.reason;
+    li.append(top, reason);
+    return li;
+  }));
 }
 
 // The shop opened from the demo panel talks to us through window.postMessage;
@@ -203,8 +245,7 @@ $("card-hold-plan").addEventListener("click", () => holds[0] && planHold(holds[0
 $("card-hold-cancel").addEventListener("click", () => holds[0] && cancelHold(holds[0]));
 $("card-hold-open").addEventListener("click", () => holds[0] && showHold(holds[0]));
 
-// ---------- Demo panel ----------
-$("demo-toggle").addEventListener("click", () => { $("demo-panel").hidden = !$("demo-panel").hidden; });
+// ---------- Demo page ----------
 $("demo-night").addEventListener("change", renderClock);
 $("open-shop").addEventListener("click", () => {
   window.open("shop.html", "pact-shop", "width=560,height=780");
@@ -213,16 +254,55 @@ $("open-shop").addEventListener("click", () => {
 $("presets").replaceChildren(...DEMO.purchases.map((p) =>
   button(p.label, "preset", () => handlePurchase(p))));
 
+// Custom purchase: any shop, amount, category and time.
+$("custom-category").replaceChildren(...Object.entries(DEMO.categories).map(([name, type]) => {
+  const option = document.createElement("option");
+  option.value = name;
+  option.textContent = `${name[0].toUpperCase()}${name.slice(1)} (${type})`;
+  return option;
+}));
+$("custom-category").value = "clothes";
+
+function showCustomType() {
+  const type = DEMO.categories[$("custom-category").value];
+  $("custom-type").textContent = type === "need"
+    ? "This is a need: Pact will always let it through."
+    : "This is a want: Pact will check it against your rules.";
+}
+$("custom-category").addEventListener("change", showCustomType);
+showCustomType();
+
+$("custom-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const shop = $("custom-shop").value.trim();
+  const amount = Number($("custom-amount").value);
+  if (!shop || !(amount > 0)) return;
+  const category = $("custom-category").value;
+  handlePurchase({
+    id: "custom",
+    shop,
+    amount,
+    category,
+    type: DEMO.categories[category],
+    bnpl: $("custom-bnpl").checked,
+    ...($("custom-time").value ? { time: $("custom-time").value } : {}),
+  });
+});
+
 $("demo-reset").addEventListener("click", () => {
   plans = [];
   kept = 0;
   holds = [];
+  activity = [];
   save("pact.plans", plans);
   save("pact.kept", kept);
   save("pact.holds", holds);
+  save("pact.activity", activity);
   closeHold();
   render();
   renderHolds();
+  renderActivity();
+  toast("Demo reset", "Everything is back to the start.");
 });
 
 renderStreak();
@@ -230,5 +310,6 @@ renderRules();
 renderClock();
 render();
 renderHolds();
+renderActivity();
 setInterval(render, 250);
 setInterval(renderClock, 30000);
