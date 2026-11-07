@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pact</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/pots.css" />
 </head>
 <body>
   <!-- ================= SIDEBAR ================= -->
@@ -30,6 +31,10 @@
       <button type="button" data-tab="alternatives">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21V10M12 14C5 14 3 9 3 3c6 0 9 3 9 8M12 17c7 0 9-5 9-11-6 0-9 3-9 8"/></svg>
         Explore alternatives
+      </button>
+      <button type="button" data-tab="pots">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8h14v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3ZM4 8h16M8 4h8M12 1v3M9 12h6"/></svg>
+        Savings pots
       </button>
       <button type="button" data-tab="statement">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>
@@ -283,6 +288,49 @@
       </div>
     </section>
 
+    <!-- ---------- MANUAL SAVINGS POTS ---------- -->
+    <section class="view" id="view-pots" aria-label="Savings pots">
+      <div class="card">
+        <h2>A little towards what matters</h2>
+        <p>Create a pot for something you care about, then choose how much to put aside.</p>
+        <p><strong>Fictional £200 demo.</strong> Adding money to a pot moves it from your available demo balance. Taking it out returns it. These pots are separate from your statement and money kept by cancelling purchases.</p>
+        <div class="pots-summary">
+          <div><span>Available demo money</span><strong class="num" id="pots-available">£200</strong></div>
+          <div><span>Across your pots</span><strong class="num" id="pots-allocated">£0</strong></div>
+        </div>
+        <p id="pots-storage-note" class="hint"></p>
+        <p id="pots-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </div>
+      <div class="pots-layout">
+        <div class="card">
+          <h2>Create a pot</h2>
+          <form id="pots-create-form">
+            <label for="pots-name">Pot name
+              <input id="pots-name" type="text" required maxlength="40" placeholder="e.g. Emergency fund" />
+            </label>
+            <label for="pots-category">Category
+              <select id="pots-category">
+                <option value="essentials">Essentials</option>
+                <option value="emergency">Emergency fund</option>
+                <option value="learning">Learning &amp; career</option>
+                <option value="goal">Personal goal</option>
+              </select>
+            </label>
+            <label for="pots-target">Savings target (£, optional)
+              <input id="pots-target" type="number" min="0.01" step="0.01" placeholder="e.g. 100" />
+            </label>
+            <button type="submit">Create pot</button>
+            <p id="pots-create-error" class="pots-error" role="alert"></p>
+          </form>
+        </div>
+        <div>
+          <h2>Your pots</h2>
+          <ul id="pots-list" aria-label="Your savings pots"></ul>
+          <div id="pots-empty" class="card empty-card">Your first pot starts here. Give it a name, then add some of your demo money.</div>
+        </div>
+      </div>
+    </section>
+
     <!-- ---------- MY PACT ---------- -->
     <section class="view grid-2" id="view-pact">
       <div class="stack">
@@ -448,6 +496,8 @@
   <script src="js/opportunities-data.js"></script>
   <script src="js/alternatives.js"></script>
   <script src="js/alternatives-ui.js"></script>
+  <script src="js/pots.js"></script>
+  <script src="js/pots-ui.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
