@@ -262,6 +262,7 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
   const wrapRef = useRef(null);
   const [wrapWidth, setWrapWidth] = useState(600);
   const [scrollX, setScrollX] = useState(0);
+  const [tooltipHeight, setTooltipHeight] = useState(0);
 
   // Measure the chart's width before the first paint (so it doesn't flash at 600px), then keep it updated.
   useLayoutEffect(() => {
@@ -353,9 +354,10 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
   });
 
   const hb = hovered != null ? buckets[hovered] : null;
-  const tipW = 250;
+  const tipW = Math.min(250, wrapWidth);
   const visibleCentre = hb ? cx(hovered) - scrollX : 0; // the tooltip sits outside the scroll area
   const tipLeft = visibleCentre + slot / 2 + tipW + 8 <= wrapWidth ? visibleCentre + slot / 2 + 8 : visibleCentre - slot / 2 - tipW - 8;
+  const boundedTipLeft = Math.max(0, Math.min(tipLeft, wrapWidth - tipW));
 
   const pickScale = (id) => {
     setScale(id);
@@ -465,7 +467,7 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
           </table>
         </div>
       ) : (
-        <div className="sc-area">
+        <div className="sc-area" style={{ minHeight: hb ? Math.max(height, margin.top + tooltipHeight + 16) : height }}>
           <div className="sc-scroll" ref={wrapRef} onScroll={(e) => setScrollX(e.currentTarget.scrollLeft)}>
             <div className="sc-plot" style={{ width }}>
               <svg
@@ -598,9 +600,10 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
               scaleInfo={scaleInfo}
               includeBills={includeBills}
               showUnusual={markUnusual}
-              left={Math.max(tipLeft, 0)}
+              left={boundedTipLeft}
               top={margin.top}
               width={tipW}
+              onHeightChange={setTooltipHeight}
             />
           )}
         </div>
@@ -646,12 +649,23 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
   );
 }
 
-function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, width }) {
+function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, width, onHeightChange }) {
+  const tipRef = useRef(null);
+  useLayoutEffect(() => {
+    const tip = tipRef.current;
+    const measure = () => onHeightChange(Math.ceil(tip.getBoundingClientRect().height));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(tip);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
+  // Reserve space in sc-area for tall tooltips. The dashboard's existing
+  // ResizeObserver then expands the iframe, including the tooltip and its shadow.
   // An hour only has a few purchases, so list them all; longer periods list just the notable ones.
   const notable = scale === "hour" ? b.items : b.items.filter((p) => p.flagged || p.preApproved);
   const segments = [...SEGMENTS].reverse().filter((s) => b[s.key] > 0);
   return (
-    <div className="sc-tip" style={{ left, top, width }}>
+    <div ref={tipRef} className="sc-tip" role="tooltip" style={{ left, top, width }}>
       <div>
         <div className="sc-tip-date">{periodLabel(b.start, scale)}</div>
         <div className="sc-tip-total">{pounds(b.total)}</div>
