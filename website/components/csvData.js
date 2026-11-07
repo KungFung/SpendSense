@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
+import { analyseStatement } from "./analysis.js";
 
-// Loading and parsing the CSV files the charts use.
-// Browsers can't read files from disk, so the CSVs must be served over HTTP next to the page.
+// Loading and parsing the bank statement CSV (statement_withinfo.csv) the charts use.
+// Browsers can't read files from disk, so the CSV must be served over HTTP next to the page.
 
-export const DEFAULT_URLS = {
-  statement: "/statement_withinfo.csv",
-  anomalies: "/spending_anomalies.csv",
-  dailyAnalysis: "/daily_spending_analysis.csv",
-};
+export const DEFAULT_STATEMENT_URL = "/statement_withinfo.csv";
 
 // ---------- CSV parsing ----------
 
@@ -56,7 +53,6 @@ export function parseCsv(text) {
 }
 
 const num = (s) => (s == null || s.trim() === "" ? null : Number(s));
-const round2 = (n) => Math.round(n * 100) / 100;
 
 // ---------- Tidying NatWest descriptions ----------
 
@@ -100,7 +96,7 @@ export function cleanDescription(raw, type) {
   return merchantName(d);
 }
 
-// ---------- One parser per file ----------
+// ---------- Reading the statement ----------
 
 const MONTHS = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
 const pad = (n) => String(n).padStart(2, "0");
@@ -113,56 +109,51 @@ function natwestDate(s) {
   return `${y}-${pad(MONTHS[mon])}-${pad(d)}T${pad(hh)}:${mm}`;
 }
 
-// statement_withinfo.csv -> purchases (money going out only), oldest first.
+// statement_withinfo.csv -> every transaction (money in and out), oldest first.
+// value is negative for money going out, like on the statement.
 // NatWest exports are newest first, so reverse before sorting to keep same-minute payments in order.
 export function parseStatement(text) {
-  return parseCsv(text)
+  const rows = parseCsv(text);
+  const missing = ["Date", "Type", "Description", "Value"].filter((c) => rows.length && !(c in rows[0]));
+  if (missing.length) throw new Error(`statement is missing columns: ${missing.join(", ")}`);
+  return rows
     .reverse()
-    .filter((r) => num(r.Value) < 0)
+    .filter((r) => r.Date.trim() !== "" && num(r.Value) != null && !Number.isNaN(num(r.Value)))
     .map((r) => ({
       date: natwestDate(r.Date),
-      type: r.Type,
-      description: cleanDescription(r.Description, r.Type),
-      amount: round2(-num(r.Value)),
+      type: r.Type.trim(),
+      description: cleanDescription(r.Description, r.Type.trim()),
+      value: num(r.Value),
+      balance: num(r.Balance),
       flagged: r.Flagged === "Yes",
       preApproved: r["Pre-approved"] === "Yes",
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// spending_anomalies.csv -> unusual days.
-export function parseAnomalies(text) {
-  return parseCsv(text).map((r) => ({
-    date: r.Date,
-    classification: r.Classification,
-    actual: num(r.Actual_Spending),
-    expected: num(r.Expected_Spending),
-    difference: num(r.Difference),
-    score: num(r.Anomaly_Score),
-    largestTransaction: cleanDescription(r.Largest_Transaction),
-  }));
-}
-
-// daily_spending_analysis.csv -> one row per day.
-export function parseDailyAnalysis(text) {
-  return parseCsv(text)
-    .map((r) => ({
-      date: r.Date,
-      total: round2(num(r.Total_Spending)),
-      variable: round2(num(r.Variable_Spending)),
-      bills: num(r.Fixed_Expenses) ?? 0,
-      baseline: num(r.Baseline),
-      score: num(r.Anomaly_Score),
-      classification: r.Classification,
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-}
-
 // ---------- React hook ----------
 
-// Fetches a CSV and parses it. Pass url = null to skip fetching (e.g. when data came in as a prop).
-// Returns { data, error, loading }.
-export function useCsv(url, parse) {
+// Each URL is fetched and analysed once, then shared by every chart that asks for it.
+const cache = new Map();
+
+function loadStatement(url) {
+  if (!cache.has(url)) {
+    const promise = fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
+        return res.text();
+      })
+      .then((text) => analyseStatement(parseStatement(text)));
+    promise.catch(() => cache.delete(url)); // let a later render try again
+    cache.set(url, promise);
+  }
+  return cache.get(url);
+}
+
+// Loads the statement and works out the analysis from it.
+// Returns { data: { purchases, days, anomalies } | null, error, loading }.
+// Pass url = null to skip loading (e.g. when the data came in as props).
+export function useStatement(url = DEFAULT_STATEMENT_URL) {
   const [state, setState] = useState({ data: null, error: null, loading: url != null });
 
   useEffect(() => {
@@ -172,17 +163,14 @@ export function useCsv(url, parse) {
     }
     let cancelled = false;
     setState({ data: null, error: null, loading: true });
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
-        return res.text();
-      })
-      .then((text) => !cancelled && setState({ data: parse(text), error: null, loading: false }))
-      .catch((error) => !cancelled && setState({ data: null, error, loading: false }));
+    loadStatement(url).then(
+      (data) => !cancelled && setState({ data, error: null, loading: false }),
+      (error) => !cancelled && setState({ data: null, error, loading: false })
+    );
     return () => {
       cancelled = true;
     };
-  }, [url, parse]);
+  }, [url]);
 
   return state;
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnomalyMarker, barPath, ChartMessage, DAY_MS, MONTHS, niceTicks, pounds, poundsShort, SEVERITY, severityRank, CHART_CSS } from "./chartShared.jsx";
-import { DEFAULT_URLS, parseAnomalies, parseStatement, useCsv } from "./csvData.js";
+import { DEFAULT_STATEMENT_URL, useStatement } from "./csvData.js";
 
 // Bar chart of how much was spent in each day / week / month.
 // A bar's colour shows whether any purchase in that period was flagged and/or pre-approved.
@@ -81,19 +81,13 @@ function buildBuckets(purchases, anomalies, scale) {
   }));
 }
 
-// Loads the CSVs, then draws the chart. Pass `purchases` / `anomalies` to skip fetching a file.
-export default function SpendingChart({
-  purchases,
-  anomalies,
-  statementUrl = DEFAULT_URLS.statement,
-  anomaliesUrl = DEFAULT_URLS.anomalies,
-  initialScale = "week",
-}) {
-  const statement = useCsv(purchases ? null : statementUrl, parseStatement);
-  const anomalyFile = useCsv(anomalies ? null : anomaliesUrl, parseAnomalies);
-  const error = statement.error || anomalyFile.error;
-  const p = purchases ?? statement.data;
-  const a = anomalies ?? anomalyFile.data;
+// Loads the statement CSV and works out the unusual days from it, then draws the chart.
+// Pass both `purchases` and `anomalies` to skip loading the file.
+export default function SpendingChart({ purchases, anomalies, statementUrl = DEFAULT_STATEMENT_URL, initialScale = "week" }) {
+  const haveProps = purchases != null && anomalies != null;
+  const { data, error } = useStatement(haveProps ? null : statementUrl);
+  const p = haveProps ? purchases : data?.purchases;
+  const a = haveProps ? anomalies : data?.anomalies;
 
   if (error || !p || !a) return <ChartMessage title="Spending over time" error={error} />;
   return <SpendingChartView purchases={p} anomalies={a} initialScale={initialScale} />;

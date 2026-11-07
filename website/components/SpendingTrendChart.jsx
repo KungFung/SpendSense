@@ -11,11 +11,11 @@ import {
   SEVERITY,
   severityRank,
 } from "./chartShared.jsx";
-import { DEFAULT_URLS, parseDailyAnalysis, useCsv } from "./csvData.js";
+import { DEFAULT_STATEMENT_URL, useStatement } from "./csvData.js";
 
 // Day-to-day spending (bills left out), with:
 // - a moving average of that spending (window chosen by the user, worked out here)
-// - the anomaly detection's "expected spending" baseline (a rolling median from the script)
+// - the anomaly detection's "expected spending" baseline (a rolling median, see analysis.js)
 // - markers under days the detection marked as unusual
 
 const WINDOWS = [7, 14, 28];
@@ -56,12 +56,13 @@ function linePath(points) {
   return d;
 }
 
-// Loads the CSV, then draws the chart. Pass `days` to skip fetching it.
-export default function SpendingTrendChart({ days, dailyUrl = DEFAULT_URLS.dailyAnalysis, initialWindow = 7 }) {
-  const file = useCsv(days ? null : dailyUrl, parseDailyAnalysis);
-  const d = days ?? file.data;
+// Loads the statement CSV and works out the daily analysis from it, then draws the chart.
+// Pass `days` (the `days` output of analyseStatement) to skip loading the file.
+export default function SpendingTrendChart({ days, statementUrl = DEFAULT_STATEMENT_URL, initialWindow = 7 }) {
+  const { data, error } = useStatement(days ? null : statementUrl);
+  const d = days ?? data?.days;
 
-  if (file.error || !d) return <ChartMessage title="Day-to-day spending" error={file.error} />;
+  if (error || !d) return <ChartMessage title="Day-to-day spending" error={error} />;
   return <SpendingTrendChartView days={d} initialWindow={initialWindow} />;
 }
 
