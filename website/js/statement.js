@@ -122,6 +122,7 @@ function useStatement(fileName, csvText) {
   statement = { fileName, loadedAt: Date.now(), classified, flags };
   save("pact.statement", statement);
   buildTransactions();
+  renderStreak();
   renderStatement();
 
   const count = (label) => classified.filter((t) => t.label === label).length;
@@ -169,6 +170,7 @@ async function askAiAboutUnsure() {
     statement.flags = SpendSense.detectImpulseSpending(statement.classified);
     save("pact.statement", statement);
     buildTransactions();
+    renderStreak();
     renderStatement();
     const left = statement.classified.filter((t) => t.label === "unsure").length;
     setAiStatus(`🤖 AI sorted ${sorted} of ${unsure.length} not-sure payments.` +
@@ -203,6 +205,10 @@ function buildTransactions() {
         category: t.group,
         type: t.label,
         impulseScore: reasons.length,
+        emergencyOverride: Boolean(t.emergencyOverride),
+        // The generator marks transactions that would trigger a Pact rule.
+        // A planned/pre-approved purchase is explicitly not a streak failure.
+        ruleBroken: Boolean(t.flagged) && !Boolean(t.preApproved),
         reasons,
       };
     });
@@ -339,6 +345,7 @@ function setLabel(t, label) {
   statement.flags = SpendSense.detectImpulseSpending(statement.classified);
   save("pact.statement", statement);
   buildTransactions();
+  renderStreak();
   renderStatement();
   renderStatementPage();
 }

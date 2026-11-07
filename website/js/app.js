@@ -41,22 +41,7 @@ function renderClock() {
 }
 
 // ---------- Streak ----------
-function renderStreak() {
-  const days = DEMO.streakDays;
-  const next = MILESTONES.find((m) => m > days) ?? days;
-  const prev = [...MILESTONES].reverse().find((m) => m <= days) ?? 0;
-  $("streak-days").textContent = days;
-  $("streak-progress").style.width = ((days - prev) / (next - prev)) * 100 + "%";
-  $("streak-sub").textContent =
-    `${next - days} days to your ${next}-day badge · ${DEMO.onTrackLast30} of the last 30 days on track`;
-
-  $("badges").replaceChildren(...MILESTONES.map((m) => {
-    const b = document.createElement("span");
-    b.className = "badge" + (days >= m ? " earned" : "");
-    b.textContent = m + " days";
-    return b;
-  }));
-}
+// The tracker is implemented in streak.js and reads the uploaded statement.
 
 // ---------- Render ----------
 function render() {

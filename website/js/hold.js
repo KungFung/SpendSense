@@ -76,7 +76,9 @@ $("hold-emergency").addEventListener("click", () => {
   const hold = activeHold;
   removeHold(hold.id);
   closeHold();
-  recordSpend(hold.shop, hold.amount, demoNow(), { flagged: true });
+  const emergencyDate = demoNow();
+  recordEmergencyOverride(emergencyDate);
+  recordSpend(hold.shop, hold.amount, emergencyDate, { flagged: true });
   toast("🚨 Released", `${money(hold.amount)} at ${hold.shop} went through. This is logged.`);
 });
 

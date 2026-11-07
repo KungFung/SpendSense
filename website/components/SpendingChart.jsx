@@ -1,5 +1,4 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   AnomalyMarker,
   barPath,
@@ -263,7 +262,6 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
   const wrapRef = useRef(null);
   const [wrapWidth, setWrapWidth] = useState(600);
   const [scrollX, setScrollX] = useState(0);
-  const areaRef = useRef(null);
 
   // Measure the chart's width before the first paint (so it doesn't flash at 600px), then keep it updated.
   useLayoutEffect(() => {
@@ -355,10 +353,9 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
   });
 
   const hb = hovered != null ? buckets[hovered] : null;
-  const tipW = Math.min(250, wrapWidth);
+  const tipW = 250;
   const visibleCentre = hb ? cx(hovered) - scrollX : 0; // the tooltip sits outside the scroll area
   const tipLeft = visibleCentre + slot / 2 + tipW + 8 <= wrapWidth ? visibleCentre + slot / 2 + 8 : visibleCentre - slot / 2 - tipW - 8;
-  const boundedTipLeft = Math.max(0, Math.min(tipLeft, wrapWidth - tipW));
 
   const pickScale = (id) => {
     setScale(id);
@@ -468,7 +465,7 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
           </table>
         </div>
       ) : (
-        <div className="sc-area" ref={areaRef}>
+        <div className="sc-area">
           <div className="sc-scroll" ref={wrapRef} onScroll={(e) => setScrollX(e.currentTarget.scrollLeft)}>
             <div className="sc-plot" style={{ width }}>
               <svg
@@ -601,10 +598,9 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
               scaleInfo={scaleInfo}
               includeBills={includeBills}
               showUnusual={markUnusual}
-              left={boundedTipLeft}
+              left={Math.max(tipLeft, 0)}
               top={margin.top}
               width={tipW}
-              anchorRef={areaRef}
             />
           )}
         </div>
@@ -650,55 +646,12 @@ function SpendingChartView({ data, initialRange, initialScale, upload }) {
   );
 }
 
-function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, width, anchorRef }) {
-  const tipRef = useRef(null);
-  const [position, setPosition] = useState({ left: 0, top: 0, width });
-  // An iframe cannot paint outside its own edges. For our same-origin dashboard,
-  // render in the parent document instead; standalone charts use their own body.
-  const host = useMemo(() => {
-    try {
-      if (window.frameElement && window.parent.document) {
-        return { document: window.parent.document, window: window.parent, frame: window.frameElement };
-      }
-    } catch {
-      // A third-party embed cannot access its parent's document.
-    }
-    return { document, window, frame: null };
-  }, []);
-  useLayoutEffect(() => {
-    const tip = tipRef.current;
-    const measure = () => {
-      const anchor = anchorRef.current.getBoundingClientRect();
-      const frame = host.frame?.getBoundingClientRect();
-      const viewportWidth = host.document.documentElement.clientWidth;
-      const viewportHeight = host.document.documentElement.clientHeight;
-      const nextWidth = Math.min(width, Math.max(0, viewportWidth - 16));
-      const next = {
-        left: Math.max(8, Math.min((frame?.left ?? 0) + (host.frame?.clientLeft ?? 0) + anchor.left + left, viewportWidth - nextWidth - 8)),
-        top: Math.max(8, Math.min((frame?.top ?? 0) + (host.frame?.clientTop ?? 0) + anchor.top + top, viewportHeight - tip.getBoundingClientRect().height - 8)),
-        width: nextWidth,
-      };
-      setPosition(previous => previous.left === next.left && previous.top === next.top && previous.width === next.width ? previous : next);
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(tip);
-    observer.observe(anchorRef.current);
-    host.window.addEventListener("scroll", measure, true);
-    host.window.addEventListener("resize", measure);
-    return () => {
-      observer.disconnect();
-      host.window.removeEventListener("scroll", measure, true);
-      host.window.removeEventListener("resize", measure);
-    };
-  }, [anchorRef, host, left, top, width, b]);
+function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, width }) {
   // An hour only has a few purchases, so list them all; longer periods list just the notable ones.
   const notable = scale === "hour" ? b.items : b.items.filter((p) => p.flagged || p.preApproved);
   const segments = [...SEGMENTS].reverse().filter((s) => b[s.key] > 0);
-  return createPortal(
-    <div className="spend-chart" style={{ display: "contents" }}>
-      <style>{CHART_CSS}</style>
-    <div ref={tipRef} className="sc-tip" role="tooltip" style={{ ...position, position: "fixed", zIndex: 45 }}>
+  return (
+    <div className="sc-tip" style={{ left, top, width }}>
       <div>
         <div className="sc-tip-date">{periodLabel(b.start, scale)}</div>
         <div className="sc-tip-total">{pounds(b.total)}</div>
@@ -789,7 +742,5 @@ function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, wi
         </div>
       )}
     </div>
-    </div>,
-    host.document.body
   );
 }

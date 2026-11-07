@@ -66,7 +66,7 @@ function toIsoDate(text) {
 }
 
 // Turn CSV text into transactions. Header names are matched case-insensitively.
-// "Amount" or "Value" both work for the money column; "Category" is optional.
+// "Amount" or "Value" both work; "Category" and an explicit "Emergency Override" column are optional.
 function parseStatementCsv(csvText) {
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim() !== "");
   if (lines.length === 0) return [];
@@ -77,6 +77,10 @@ function parseStatementCsv(csvText) {
   const descriptionCol = col("description");
   const amountCol = col("amount", "value");
   const categoryCol = col("category");
+  const emergencyCol = col("emergency override", "emergency", "emergency_used");
+  const flaggedCol = col("flagged", "rule broken", "rule_broken");
+  const preApprovedCol = col("pre-approved", "preapproved", "pre approved", "planned", "planned purchase");
+  const isYes = (value) => ["yes", "true", "1", "y", "used"].includes(String(value || "").trim().toLowerCase());
 
   return lines.slice(1).map((line) => {
     const cells = splitCsvLine(line);
@@ -90,6 +94,9 @@ function parseStatementCsv(csvText) {
       amount: Number.isFinite(amount) ? amount : null,
       type: !Number.isFinite(amount) ? null : amount > 0 ? "income" : "expense",
       category: categoryCol >= 0 && cells[categoryCol] ? cells[categoryCol] : null,
+      ...(emergencyCol >= 0 ? { emergencyOverride: isYes(cells[emergencyCol]) } : {}),
+      ...(flaggedCol >= 0 ? { flagged: isYes(cells[flaggedCol]) } : {}),
+      ...(preApprovedCol >= 0 ? { preApproved: isYes(cells[preApprovedCol]) } : {}),
       merchant: null, // the real parser may fill this in later
     };
   });

@@ -166,13 +166,12 @@ body.night .spend-chart {${NIGHT}
   background: var(--surface); border-radius: 14px; box-shadow: var(--tip-shadow);
   border: 1px solid var(--line); padding: 14px 16px; font-size: 13.5px;
   display: flex; flex-direction: column; gap: 8px;
-  overflow-wrap: anywhere;
 }
 .spend-chart .sc-tip-date { font-size: 13px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.6px; }
 .spend-chart .sc-tip-total { font-family: var(--numfont); font-size: 28px; line-height: 1.1; color: var(--num); }
 .spend-chart .sc-tip-section { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--line); padding-top: 8px; }
 .spend-chart .sc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.spend-chart .sc-row > span:first-child { display: flex; align-items: center; flex: 1; color: var(--ink-2); min-width: 0; }
+.spend-chart .sc-row > span:first-child { display: flex; align-items: center; color: var(--ink-2); min-width: 0; }
 .spend-chart .sc-row > span:last-child { font-family: var(--numfont); color: var(--num); white-space: nowrap; }
 .spend-chart .sc-note { color: var(--ink-2); font-size: 12.5px; }
 .spend-chart .sc-chip { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 6px; white-space: nowrap; }
