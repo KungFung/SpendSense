@@ -50,11 +50,11 @@ function aiHelper() {
 export default defineConfig({
   root: "website",
   plugins: [react(), aiHelper()],
-  server: { open: "/chart.html" },
+  server: { open: "/" },
   build: {
     outDir: "../dist",
     emptyOutDir: true,
     // Only the chart is built. index.html loads plain scripts and is opened directly, no build needed.
-    rollupOptions: { input: { chart: page("chart.html") } },
+    // rollupOptions: { input: { chart: page("chart.html") } },
   },
 });
