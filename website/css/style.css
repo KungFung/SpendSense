@@ -1,4 +1,13 @@
+@font-face {
+  font-family: "RN House Sans";
+  src: url("../fonts/rn-house-sans-regular.woff2") format("woff2"),
+       url("../fonts/rn-house-sans-regular.woff") format("woff");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
+  --number: #383838;
   --purple-900: #2a0c3f;
   --purple-800: #42145f;
   --purple-600: #5a287d;
@@ -59,10 +68,6 @@ body {
 .side-card strong { display: block; font-size: 14px; margin-bottom: 2px; }
 .spacer { flex: 1; }
 
-.demo { background: rgba(0,0,0,0.25); border-radius: 14px; padding: 12px 14px; font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
-.demo strong { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; opacity: 0.7; }
-.demo label { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
-.demo .link { color: #d9c2ef; font-size: 13px; }
 
 /* ---------- Main ---------- */
 .main { padding: 32px 40px 48px; max-width: 1240px; width: 100%; }
@@ -103,6 +108,10 @@ body {
 }
 .streak-main { display: flex; align-items: baseline; gap: 10px; }
 .streak-num { font-size: 56px; font-weight: 800; line-height: 1; }
+
+/* Numbers use NatWest's RN House Sans in #383838 */
+.num { font-family: "RN House Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 400; color: var(--number); font-variant-numeric: tabular-nums; }
+.streak .num { color: #fff; } /* #383838 isn't readable on the purple banner */
 .streak-label { font-size: 20px; font-weight: 600; }
 .streak-sub { font-size: 14px; opacity: 0.85; margin-top: 10px; }
 .streak-bar { height: 10px; background: rgba(255,255,255,0.18); border-radius: 999px; margin-top: 16px; overflow: hidden; }
@@ -114,7 +123,7 @@ body {
 /* Wins */
 .wins { display: flex; flex-direction: column; gap: 20px; }
 .win { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.win strong { font-size: 32px; color: var(--green); }
+.win strong { font-size: 32px; }
 .win span { font-size: 14px; color: var(--muted); }
 
 .status .icon { background: var(--green-50); }
@@ -155,7 +164,7 @@ input[type="text"], input[type="number"] {
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
 .tiers { display: flex; gap: 8px; margin-top: 14px; }
 .tier { flex: 1; background: var(--purple-50); border-radius: 10px; padding: 10px; font-size: 13px; color: var(--muted); }
-.tier strong { display: block; font-size: 15px; color: var(--text); }
+.tier strong { display: block; font-size: 15px; }
 
 /* ---------- Planned purchases ---------- */
 ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -176,6 +185,71 @@ ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: col
 .rule { display: flex; gap: 12px; align-items: flex-start; }
 .rule small { display: block; color: var(--muted); margin-top: 6px; font-size: 12px; }
 
+/* ---------- Hold screen ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; place-items: center; padding: 24px;
+  background: rgba(13, 6, 20, 0.92);
+  backdrop-filter: blur(6px);
+  animation: fade-in 0.35s ease;
+}
+.hold-screen { width: 100%; max-width: 520px; color: #fff; text-align: center; }
+.hold-kicker { margin: 0; font-size: 16px; letter-spacing: 0.4px; opacity: 0.8; }
+.hold-amount { font-size: 72px; line-height: 1.1; margin: 8px 0 0; color: #fff; }
+.hold-shop { margin: 4px 0 28px; font-size: 20px; opacity: 0.9; }
+.voice {
+  display: flex; gap: 14px; align-items: center; text-align: left;
+  background: rgba(255,255,255,0.08); border-radius: var(--radius); padding: 16px 18px;
+}
+.voice p { margin: 4px 0 0; font-style: italic; opacity: 0.85; }
+.voice-play {
+  width: 48px; height: 48px; flex-shrink: 0; padding: 0; font-size: 18px;
+  background: #fff; color: var(--purple-800);
+}
+.hold-rule { margin: 20px 0 0; font-size: 14px; opacity: 0.75; }
+.hold-reason { margin: 6px 0 0; font-size: 14px; color: #ffcf99; }
+.hold-actions { display: flex; gap: 10px; margin-top: 28px; }
+.hold-actions button { flex: 1; }
+.hold-actions #hold-cancel { background: #fff; color: var(--purple-800); }
+button.ghost { background: rgba(255,255,255,0.1); color: #fff; border: 1.5px solid rgba(255,255,255,0.35); }
+.hold-secondary { display: flex; justify-content: center; gap: 28px; margin-top: 18px; }
+.hold-secondary .link { color: #d9c2ef; font-size: 14px; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- Toasts ---------- */
+.toasts { position: fixed; top: 20px; right: 20px; z-index: 60; display: flex; flex-direction: column; gap: 10px; width: 340px; }
+.toast {
+  background: var(--card); color: var(--text); border-radius: 14px; padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(42, 12, 63, 0.18); animation: fade-in 0.25s ease;
+}
+.toast p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+
+/* ---------- Demo page ---------- */
+.toggles { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+label.inline, .toggles label { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
+button.wide { width: 100%; margin-top: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+select, input[type="time"] {
+  padding: 11px 12px; border: 1px solid #d6cde0; border-radius: 10px; font-size: 16px;
+  font-family: inherit; background: #fff; color: var(--text);
+}
+label small.hint { font-size: 12px; font-weight: 400; }
+.presets { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+button.preset {
+  background: var(--purple-50); color: var(--text); border-radius: 10px;
+  padding: 11px 14px; font-size: 14px; font-weight: 500; text-align: left;
+}
+button.preset:hover { background: var(--purple-100); }
+.activity { margin-top: 12px; gap: 0; }
+.activity li { padding: 10px 0; border-top: 1px solid var(--line); }
+.activity li:first-child { border-top: 0; }
+.activity-top { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 14px; }
+.activity small { display: block; color: var(--muted); font-size: 13px; margin-top: 3px; }
+.result-badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.result-badge.allow { background: var(--green-50); color: var(--green); }
+.result-badge.nudge { background: var(--amber-50); color: var(--amber); }
+.result-badge.hold { background: var(--purple-100); color: var(--purple-800); }
+
 /* ---------- Night theme (after 11pm, or demo clock) ---------- */
 body.night { background: #140b1f; color: #eee; }
 body.night .sidebar { background: linear-gradient(180deg, #1e0d2e, #0d0614); }
@@ -184,11 +258,13 @@ body.night .card p, body.night .hint, body.night .section-title, body.night .win
 body.night .greeting, body.night .clock, body.night .plan-status, body.night .rule small { color: #a99bb8; }
 body.night .streak { background: linear-gradient(135deg, #2e1546, #1e0d2e); }
 body.night .icon, body.night .tier { background: #2e2040; }
-body.night .tier strong { color: #eee; }
+body.night .tier strong, body.night .num { color: #eee; }
 body.night .risk { order: -1; grid-column: span 3; }
 body.night .hold, body.night #hold-done { grid-column: span 2; }
 body.night button.secondary { color: #d9c2ef; border-color: #d9c2ef; }
-body.night input { background: #2e2040; color: #eee; border-color: #3d2c52; }
+body.night input, body.night select { background: #2e2040; color: #eee; border-color: #3d2c52; }
+body.night button.preset { background: #2e2040; color: #eee; }
+body.night .activity li { border-color: #2e2040; }
 
 /* ---------- Person 3: Social Mobility and Better Alternatives ---------- */
 #view-alternatives h2 { margin: 0 0 12px; font-size: 21px; }
@@ -222,6 +298,6 @@ body.night #view-alternatives :focus-visible { outline-color: #d9c2ef; }
   body { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; }
   .main { padding: 24px 20px; }
-  .grid-home, .grid-2, .rules { grid-template-columns: 1fr; }
+  .grid-home, .grid-2, .rules, .form-row { grid-template-columns: 1fr; }
   .span-2, .span-3, body.night .risk, body.night .hold, body.night #hold-done { grid-column: auto; }
 }

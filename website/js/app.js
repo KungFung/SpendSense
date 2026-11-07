@@ -62,16 +62,24 @@ function render() {
   const now = Date.now();
 
   const active = plans.filter((p) => ["cooling", "ready"].includes(statusOf(p, now)));
-  $("home-plans").replaceChildren(...active.slice(0, 4).map((p) => planItem(p, now)));
+  syncPlanList($("home-plans"), active.slice(0, 4), now);
   $("home-empty").hidden = active.length > 0;
 
-  $("plans").replaceChildren(...plans.map((p) => planItem(p, now)));
+  syncPlanList($("plans"), plans, now);
   $("empty").hidden = plans.length > 0;
 
-  $("hold-card").hidden = holdStatus !== "held";
-  $("hold-done").hidden = holdStatus === "held";
   $("protected").textContent = money(DEMO.protectedThisMonth);
   $("kept-home").textContent = money(kept);
+}
+
+function renderHolds() {
+  const latest = holds[0];
+  $("hold-card").hidden = !latest;
+  $("hold-done").hidden = Boolean(latest);
+  if (!latest) return;
+  $("hold-title").textContent = holds.length === 1 ? "1 purchase on hold" : `${holds.length} purchases on hold`;
+  $("hold-line").textContent = `${latest.shop} · ${money(latest.amount)}`;
+  $("hold-rule-line").textContent = `Rule: ${latest.ruleText}`;
 }
 
 function renderRules() {
@@ -90,10 +98,11 @@ function renderRules() {
     li.append(icon, body);
     return li;
   }));
+  $("rule-count").textContent = DEMO.rules.length;
 }
 
 // ---------- Navigation ----------
-const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact", alternatives: "Explore alternatives" };
+const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact", demo: "Demo controls", alternatives: "Explore alternatives" };
 
 function showTab(name) {
   document.querySelectorAll(".nav [data-tab]").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
@@ -122,36 +131,185 @@ $("plan-form").addEventListener("submit", (e) => {
   render();
 });
 
-$("hold-plan").addEventListener("click", () => {
-  addPlan(DEMO.hold.item, DEMO.hold.price);
-  holdStatus = "planned";
-  save("pact.hold", holdStatus);
-  render();
+// ---------- Purchases (fake shop window + demo panel) ----------
+// A purchase arrives, Pact's rules decide, and the result goes back to the shop.
+function handlePurchase(purchase) {
+  const date = demoNow();
+  if (purchase.time) {
+    const [h, m] = purchase.time.split(":").map(Number);
+    date.setHours(h, m, 0, 0);
+  }
+  const tx = { ...purchase, date: date.toISOString() };
+  const decision = checkPurchase(tx);
+  const label = `${tx.shop} ${money(tx.amount)}`;
+
+  if (decision.action === "hold") {
+    const hold = {
+      id: Date.now().toString(36),
+      shop: tx.shop,
+      amount: tx.amount,
+      ruleText: decision.rule?.text ?? "Your pact",
+      reason: decision.reason ?? "",
+      planId: decision.plan?.id ?? null,
+      createdAt: Date.now(),
+    };
+    holds.unshift(hold);
+    save("pact.holds", holds);
+    renderHolds();
+    showHold(hold);
+  } else if (decision.action === "nudge") {
+    toast(`💬 ${label}: nudge`, `${decision.reason} It went through; your pact just checked in.`);
+  } else {
+    if (decision.plan) finish(decision.plan.id, "bought");
+    toast(`✅ ${label}: approved`, decision.reason);
+  }
+  logActivity(tx, decision);
+  return { action: decision.action, reason: decision.reason ?? "" };
+}
+
+const ACTION_LABELS = { allow: "Approved", nudge: "Nudge", hold: "Held" };
+
+function logActivity(tx, decision) {
+  const time = new Date(tx.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  activity.unshift({
+    shop: tx.shop,
+    amount: tx.amount,
+    time,
+    bnpl: Boolean(tx.bnpl),
+    action: decision.action,
+    reason: decision.reason || decision.rule?.text || "",
+  });
+  activity = activity.slice(0, 20);
+  save("pact.activity", activity);
+  renderActivity();
+}
+
+function renderActivity() {
+  $("activity-empty").hidden = activity.length > 0;
+  $("activity").replaceChildren(...activity.map((a) => {
+    const li = document.createElement("li");
+    const top = document.createElement("div");
+    top.className = "activity-top";
+    const name = document.createElement("span");
+    name.textContent = `${a.shop} · ${a.time}`;
+    const right = document.createElement("span");
+    const amount = document.createElement("span");
+    amount.className = "num";
+    amount.textContent = money(a.amount);
+    const badge = document.createElement("span");
+    badge.className = "result-badge " + a.action;
+    badge.textContent = ACTION_LABELS[a.action];
+    right.append(amount, " ", badge);
+    top.append(name, right);
+    const reason = document.createElement("small");
+    reason.textContent = a.reason;
+    li.append(top, reason);
+    return li;
+  }));
+}
+
+// The shop opened from the demo panel talks to us through window.postMessage;
+// a shop opened on its own uses BroadcastChannel (same browser, same computer).
+window.addEventListener("message", (e) => {
+  if (e.data?.type !== "pact:purchase") return;
+  const result = handlePurchase(e.data.purchase);
+  e.source?.postMessage({ type: "pact:result", ...result }, "*");
 });
 
-$("hold-cancel").addEventListener("click", () => {
-  kept += DEMO.hold.price;
-  holdStatus = "cancelled";
-  save("pact.kept", kept);
-  save("pact.hold", holdStatus);
-  render();
-});
+try {
+  const channel = new BroadcastChannel("pact");
+  channel.onmessage = (e) => {
+    if (e.data?.type !== "pact:purchase") return;
+    channel.postMessage({ type: "pact:result", ...handlePurchase(e.data.purchase) });
+  };
+} catch {
+  // Not supported here; the shop window opened from the demo panel still works.
+}
 
+// ---------- Toasts ----------
+function toast(title, text) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  const strong = document.createElement("strong");
+  strong.textContent = title;
+  const p = document.createElement("p");
+  p.textContent = text;
+  el.append(strong, p);
+  $("toasts").prepend(el);
+  [...$("toasts").children].slice(3).forEach((old) => old.remove());
+  setTimeout(() => el.remove(), 5000);
+}
+
+// ---------- Dashboard hold card ----------
+$("card-hold-plan").addEventListener("click", () => holds[0] && planHold(holds[0]));
+$("card-hold-cancel").addEventListener("click", () => holds[0] && cancelHold(holds[0]));
+$("card-hold-open").addEventListener("click", () => holds[0] && showHold(holds[0]));
+
+// ---------- Demo page ----------
 $("demo-night").addEventListener("change", renderClock);
+$("open-shop").addEventListener("click", () => {
+  window.open("shop.html", "pact-shop", "width=560,height=780");
+});
+
+$("presets").replaceChildren(...DEMO.purchases.map((p) =>
+  button(p.label, "preset", () => handlePurchase(p))));
+
+// Custom purchase: any shop, amount, category and time.
+$("custom-category").replaceChildren(...Object.entries(DEMO.categories).map(([name, type]) => {
+  const option = document.createElement("option");
+  option.value = name;
+  option.textContent = `${name[0].toUpperCase()}${name.slice(1)} (${type})`;
+  return option;
+}));
+$("custom-category").value = "clothes";
+
+function showCustomType() {
+  const type = DEMO.categories[$("custom-category").value];
+  $("custom-type").textContent = type === "need"
+    ? "This is a need: Pact will always let it through."
+    : "This is a want: Pact will check it against your rules.";
+}
+$("custom-category").addEventListener("change", showCustomType);
+showCustomType();
+
+$("custom-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const shop = $("custom-shop").value.trim();
+  const amount = Number($("custom-amount").value);
+  if (!shop || !(amount > 0)) return;
+  const category = $("custom-category").value;
+  handlePurchase({
+    id: "custom",
+    shop,
+    amount,
+    category,
+    type: DEMO.categories[category],
+    bnpl: $("custom-bnpl").checked,
+    ...($("custom-time").value ? { time: $("custom-time").value } : {}),
+  });
+});
 
 $("demo-reset").addEventListener("click", () => {
   plans = [];
   kept = 0;
-  holdStatus = "held";
+  holds = [];
+  activity = [];
   save("pact.plans", plans);
   save("pact.kept", kept);
-  save("pact.hold", holdStatus);
+  save("pact.holds", holds);
+  save("pact.activity", activity);
+  closeHold();
   render();
+  renderHolds();
+  renderActivity();
+  toast("Demo reset", "Everything is back to the start.");
 });
 
 renderStreak();
 renderRules();
 renderClock();
 render();
+renderHolds();
+renderActivity();
 setInterval(render, 250);
 setInterval(renderClock, 30000);

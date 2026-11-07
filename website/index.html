@@ -35,6 +35,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>
         Statements (soon)
       </button>
+      <button type="button" data-tab="demo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></svg>
+        Demo controls
+      </button>
     </nav>
 
     <div class="side-card">
@@ -44,12 +48,6 @@
 
     <div class="spacer"></div>
 
-    <div class="demo">
-      <strong>Demo controls</strong>
-      <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1h = 1s)</label>
-      <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
-      <button class="link" id="demo-reset" type="button">Reset demo</button>
-    </div>
   </aside>
 
   <!-- ================= MAIN ================= -->
@@ -67,7 +65,7 @@
       <div class="streak span-2">
         <div>
           <div class="streak-main">
-            <span class="streak-num">🔥 <span id="streak-days"></span></span>
+            <span class="streak-num">🔥 <span class="num" id="streak-days"></span></span>
             <span class="streak-label">day streak</span>
           </div>
           <div class="streak-sub" id="streak-sub"></div>
@@ -79,8 +77,8 @@
       </div>
 
       <div class="wins">
-        <div class="card win"><strong id="protected"></strong><span>protected by your pact this month</span></div>
-        <div class="card win"><strong id="kept-home"></strong><span>kept by changing your mind</span></div>
+        <div class="card win"><strong class="num" id="protected"></strong><span>protected by your pact this month</span></div>
+        <div class="card win"><strong class="num" id="kept-home"></strong><span>kept by changing your mind</span></div>
       </div>
 
       <div class="card status">
@@ -88,7 +86,7 @@
           <div class="icon">🛡️</div>
           <div>
             <h3><span class="dot"></span><span id="status-title">You're calm today</span></h3>
-            <p>Your pact is active · 4 rules</p>
+            <p>Your pact is active · <span class="num" id="rule-count"></span> rules</p>
           </div>
         </div>
       </div>
@@ -103,20 +101,21 @@
         </div>
       </div>
 
-      <div class="card hold" id="hold-card">
+      <div class="card hold" id="hold-card" hidden>
         <div class="card-head">
           <div class="icon">⏸️</div>
           <div>
-            <h3>1 purchase on hold</h3>
-            <p>Klarna × ASOS · £340 · decide in 14h<br />Rule: "Over £50 after midnight"</p>
+            <h3 id="hold-title"></h3>
+            <p><span class="num" id="hold-line"></span><br /><span id="hold-rule-line"></span></p>
           </div>
         </div>
         <div class="actions">
-          <button class="secondary" id="hold-plan" type="button">Plan it instead</button>
-          <button id="hold-cancel" type="button">Cancel it</button>
+          <button class="secondary" id="card-hold-open" type="button">Review</button>
+          <button class="secondary" id="card-hold-plan" type="button">Plan it</button>
+          <button id="card-hold-cancel" type="button">Cancel it</button>
         </div>
       </div>
-      <div class="card" id="hold-done" hidden>
+      <div class="card" id="hold-done">
         <div class="card-head">
           <div class="icon">✅</div>
           <div>
@@ -148,9 +147,9 @@
         <h3>Plan a big purchase</h3>
         <p>Tell Pact in advance. After a short cooling-off period, it goes through without a hold.</p>
         <div class="tiers">
-          <div class="tier"><strong>24 hours</strong>under £100</div>
-          <div class="tier"><strong>48 hours</strong>£100 – £499</div>
-          <div class="tier"><strong>72 hours</strong>£500 and over</div>
+          <div class="tier"><strong class="num">24 hours</strong>under £100</div>
+          <div class="tier"><strong class="num">48 hours</strong>£100 – £499</div>
+          <div class="tier"><strong class="num">72 hours</strong>£500 and over</div>
         </div>
         <form id="plan-form">
           <label>
@@ -251,7 +250,111 @@
         </div>
       </div>
     </section>
+
+    <!-- ---------- DEMO ---------- -->
+    <section class="view grid-2" id="view-demo">
+      <div class="stack">
+        <div class="card">
+          <h3>Clock and speed</h3>
+          <p>Switch to 1:47am to show the night mode and the late-night rule.</p>
+          <div class="toggles">
+            <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
+            <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1 hour = 1 second)</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Shop window</h3>
+          <p>Opens a pretend checkout. Put it next to Pact and pay: Pact decides live.</p>
+          <button type="button" id="open-shop" class="wide">🛍️ Open the shop window</button>
+        </div>
+
+        <div class="card">
+          <h3>Custom purchase</h3>
+          <p>Make up any purchase and see what Pact does with it.</p>
+          <form id="custom-form">
+            <div class="form-row">
+              <label>
+                Shop
+                <input id="custom-shop" type="text" placeholder="e.g. JD Sports" required maxlength="40" />
+              </label>
+              <label>
+                Amount (£)
+                <input id="custom-amount" type="number" min="0.01" step="0.01" placeholder="120" required />
+              </label>
+            </div>
+            <div class="form-row">
+              <label>
+                Category
+                <select id="custom-category"></select>
+              </label>
+              <label>
+                Time
+                <input id="custom-time" type="time" />
+                <small class="hint">Leave empty to use Pact's clock</small>
+              </label>
+            </div>
+            <label class="inline"><input id="custom-bnpl" type="checkbox" /> Paid with buy now, pay later</label>
+            <p class="hint" id="custom-type"></p>
+            <button type="submit">Make purchase</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3>Story purchases</h3>
+          <p>The purchases from the demo script, in order.</p>
+          <div class="presets" id="presets"></div>
+        </div>
+
+        <div class="card">
+          <h3>What Pact decided</h3>
+          <ul class="activity" id="activity"></ul>
+          <p class="hint" id="activity-empty">No purchases yet.</p>
+        </div>
+
+        <div class="card">
+          <h3>Reset</h3>
+          <p>Clears planned purchases, holds, money kept and this log.</p>
+          <button type="button" class="secondary wide" id="demo-reset">Reset demo</button>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <!-- ================= HOLD SCREEN ================= -->
+  <div class="overlay" id="hold-overlay" hidden>
+    <div class="hold-screen">
+      <p class="hold-kicker">⏸️ Your Pact is holding</p>
+      <div class="hold-amount num" id="hold-amount"></div>
+      <p class="hold-shop" id="hold-shop"></p>
+
+      <div class="voice">
+        <button class="voice-play" id="voice-play" type="button" aria-label="Play your message">▶</button>
+        <div>
+          <strong>A message from you · 3 Oct</strong>
+          <p>"Hey. It's you. Sleep on it. You'll thank me in the morning."</p>
+        </div>
+      </div>
+
+      <p class="hold-rule" id="hold-rule"></p>
+      <p class="hold-reason" id="hold-reason"></p>
+
+      <div class="hold-actions">
+        <button class="ghost" id="hold-wait" type="button">⏳ Wait 24h</button>
+        <button class="ghost" id="hold-plan" type="button">📅 Plan it instead</button>
+        <button id="hold-cancel" type="button">❌ Cancel it</button>
+      </div>
+      <div class="hold-secondary">
+        <button class="link" id="hold-sam" type="button">💬 Message Sam</button>
+        <button class="link" id="hold-emergency" type="button">🚨 This is an emergency</button>
+      </div>
+    </div>
+  </div>
+  <audio id="voice-note" src="audio/voice-note.mp3" preload="auto"></audio>
+
+  <div class="toasts" id="toasts"></div>
 
   <!-- Load order matters: core first, app last. Add your file between them. -->
   <script src="js/core.js"></script>
