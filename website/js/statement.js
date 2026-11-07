@@ -154,12 +154,129 @@ function renderStatement() {
   }));
 }
 
+// ---------- "Needs & wants" page: every payment with its label ----------
+const LABEL_TEXT = { need: "Need", want: "Want", unsure: "Not sure" };
+let statementFilter = "all";
+
+// "2026-09-12" → "12 Sep"
+const shortDate = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+// A readable name from the bank's text:
+//   "'7658 20Aug26 C , ASOS.COM , GB"         → "Asos.com"       (card payment: the middle part)
+//   "'T BROWN , DINNER , VIA MOBILE - PYMT"   → "T Brown · dinner" (paid a person)
+//   "'GLASGOW CITY COUN"                      → "Glasgow City Coun"
+function displayName(t) {
+  if (t.group === "cash withdrawal") return "Cash machine";
+  const parts = String(t.description || "").replace(/^'/, "").split(",").map((p) => p.trim());
+  let name = parts.length >= 3 && /\d\d[A-Za-z]{3}\d\d C$/.test(parts[0]) ? parts[1]
+    : parts.length >= 3 ? `${parts[0]} · ${parts[1].toLowerCase()}`
+    : parts[0];
+  name = name.split(/\s+/).filter((w) => !/\d/.test(w)).join(" ").replace(/\*.*$/, "").trim(); // drop store numbers and refs
+  // Title case, but keep short names like "EE", "TK" and "H&M" in capitals.
+  return name.replace(/[A-Za-z&.]+/g, (w) =>
+    w.length <= 2 || w.includes("&") || w !== w.toUpperCase() ? w : w[0] + w.slice(1).toLowerCase()) || "Unknown";
+}
+
+// A plain-English "why" for each label.
+const nice = (group) => group.replace(/\//g, " / ").replace(/^./, (c) => c.toUpperCase());
+function whyText(t) {
+  if (t.source === "you") return "You chose this";
+  if (t.label === "unsure") return t.group ? `${nice(t.group)}: could be either, you decide` : "We don't know this one yet, you decide";
+  return t.group ? nice(t.group) : t.reason;
+}
+
+function renderStatementPage() {
+  const results = $("ss-results");
+  if (!results) return;
+  results.hidden = !statement;
+  $("ss-empty").hidden = Boolean(statement);
+  $("statement-upload-page").textContent = statement ? "📄 Upload a different statement" : "📄 Upload a statement";
+  if (!statement) return;
+
+  const spending = statement.classified.filter((t) => t.label !== "income");
+  for (const label of ["need", "want", "unsure"]) {
+    const list = spending.filter((t) => t.label === label);
+    $(`ss-${label}`).textContent = money(Math.round(list.reduce((sum, t) => sum - t.amount, 0) * 100) / 100);
+    $(`ss-${label}-n`).textContent = `${list.length} payments`;
+  }
+
+  // Which payments the impulse checks flagged, with a short reason.
+  const flagged = new Map();
+  statement.flags.forEach((f) => f.transactions.forEach((t) => flagged.set(t.date + t.description, firstSentence(f.message))));
+
+  document.querySelectorAll("#ss-filters button").forEach((b) => b.classList.toggle("active", b.dataset.filter === statementFilter));
+  const shown = spending.filter((t) => statementFilter === "all" || t.label === statementFilter);
+
+  $("ss-rows").replaceChildren(...shown.map((t) => {
+    const tr = document.createElement("tr");
+    const cell = (text, className) => {
+      const td = document.createElement("td");
+      td.textContent = text;
+      if (className) td.className = className;
+      tr.append(td);
+      return td;
+    };
+    cell(shortDate(t.date));
+    cell(displayName(t)).title = t.description; // full bank text on hover
+    cell(money(-t.amount), "ss-amount num");
+
+    const labelCell = cell("");
+    const pill = document.createElement("span");
+    pill.className = "pill " + t.label;
+    pill.textContent = LABEL_TEXT[t.label];
+    labelCell.append(pill);
+    if (t.label === "unsure") {
+      // The user decides: tap Need or Want.
+      const pick = document.createElement("div");
+      pick.className = "ss-pick";
+      pick.append(
+        button("Need", "", () => setLabel(t, "need")),
+        button("Want", "", () => setLabel(t, "want")));
+      labelCell.append(pick);
+    }
+
+    const why = cell(whyText(t), "ss-why");
+    const flag = flagged.get(t.date + t.description);
+    if (flag) {
+      const note = document.createElement("span");
+      note.className = "ss-flag";
+      note.textContent = "⚠️ " + flag;
+      why.append(note);
+    }
+    return tr;
+  }));
+}
+
+// The user's own answer wins, and it changes their "usual" spending too.
+function setLabel(t, label) {
+  t.label = label;
+  t.source = "you";
+  t.confidence = 1;
+  statement.flags = SpendSense.detectImpulseSpending(statement.classified);
+  save("pact.statement", statement);
+  buildTransactions();
+  renderStatement();
+  renderStatementPage();
+}
+
+document.querySelectorAll("#ss-filters button").forEach((b) => b.addEventListener("click", () => {
+  statementFilter = b.dataset.filter;
+  renderStatementPage();
+}));
+
+// ---------- Upload buttons (dashboard and the Needs & wants page) ----------
 $("statement-upload")?.addEventListener("click", () => $("statement-file").click());
+$("statement-upload-page")?.addEventListener("click", () => $("statement-file").click());
 $("statement-file")?.addEventListener("change", async (e) => {
   const file = e.target.files[0];
-  if (file) useStatement(file.name, await file.text());
+  if (file) {
+    useStatement(file.name, await file.text());
+    renderStatementPage();
+    if (statement) showTab("statement"); // go straight to the labelled list
+  }
   e.target.value = ""; // so the same file can be chosen again
 });
 
 buildTransactions();
 renderStatement();
+renderStatementPage();
