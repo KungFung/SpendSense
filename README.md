@@ -9,7 +9,7 @@ The full project plan (features, ethics, architecture, demo script) is in [PROJE
 
 ## Run the website
 
-No install needed. Open `website/index.html` in a browser.
+No install needed. Open `website/index.html` in a browser (double-click it in Finder). Everything is in that one file.
 
 Current feature: **planned purchases**. Tell Pact about a big purchase in advance, wait out a cooling-off period
 (24h under £100, 48h for £100–£499, 72h for £500+), then buy it without a hold. "Demo speed" makes 1 hour pass in 1 second.
