@@ -48,6 +48,7 @@ let plans = load("pact.plans", []);
 let kept = load("pact.kept", 0);
 let holds = load("pact.holds", []); // purchases Pact is holding, newest first
 let activity = load("pact.activity", []); // demo log: what Pact decided, newest first
+let spent = load("pact.spent", []); // purchases that went through, for the spending chart (chart.jsx)
 
 const $ = (id) => document.getElementById(id);
 const money = (n) => "£" + Number(n).toLocaleString("en-GB", Number(n) % 1

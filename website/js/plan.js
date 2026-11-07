@@ -102,7 +102,12 @@ function buildPlanItem(plan, status) {
   if (status === "cooling" || status === "ready") {
     const actions = document.createElement("div");
     actions.className = "actions";
-    if (status === "ready") actions.append(button("Buy it", "go", () => finish(plan.id, "bought")));
+    if (status === "ready") {
+      actions.append(button("Buy it", "go", () => {
+        finish(plan.id, "bought");
+        recordSpend(plan.item, plan.price, demoNow(), { preApproved: true });
+      }));
+    }
     actions.append(button("I don't want it anymore", "secondary", () => finish(plan.id, "cancelled")));
     li.append(actions);
   }

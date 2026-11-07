@@ -76,6 +76,7 @@ $("hold-emergency").addEventListener("click", () => {
   const hold = activeHold;
   removeHold(hold.id);
   closeHold();
+  recordSpend(hold.shop, hold.amount, demoNow(), { flagged: true });
   toast("🚨 Released", `${money(hold.amount)} at ${hold.shop} went through. This is logged.`);
 });
 
@@ -104,6 +105,7 @@ function closeNudge(outcome) {
     render();
     toast("❌ Cancelled", `${money(tx.amount)} kept by changing your mind.`);
   } else {
+    recordSpend(tx.shop, tx.amount, tx.date, { flagged: true });
     toast(`✅ ${tx.shop} ${money(tx.amount)}: bought`, "Your choice. Your pact just checked in.");
   }
   document.dispatchEvent(new CustomEvent("pact:nudge-done", { detail: { tx, outcome } }));
