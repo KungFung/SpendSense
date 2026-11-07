@@ -25,11 +25,31 @@ import "./fonts.css"; // RN House Sans for numbers, like the Pact site
 // squash everything else; when hidden, the bars, band and line all measure the same thing.
 
 const SCALES = [
+  // Hours only make sense within one day; the anomaly detection works on whole days, so no band or average.
+  { id: "hour", label: "Hour", lines: false, avgWindow: null, avgLabel: null },
   { id: "day", label: "Day", lines: true, avgWindow: 7, avgLabel: "7-day average" },
   { id: "week", label: "Week", lines: true, avgWindow: 4, avgLabel: "4-week average" },
   // Only a few months, two of them partial, so the band and average would mislead: just bars.
   { id: "month", label: "Month", lines: false, avgWindow: null, avgLabel: null },
 ];
+
+// How much time the chart shows, counted back from the last day in the statement (not today,
+// so an older statement still shows something). Each range allows the bar sizes that make sense for it.
+const RANGES = [
+  { id: "all", label: "All time", scales: ["day", "week", "month"], scale: "week" },
+  { id: "year", label: "Past year", days: 365, scales: ["day", "week", "month"], scale: "week" },
+  { id: "ytd", label: "Year to date", scales: ["day", "week", "month"], scale: "week" },
+  { id: "month", label: "Past month", days: 30, scales: ["day", "week"], scale: "day" },
+  { id: "week", label: "Past week", days: 7, scales: ["day"], scale: "day" },
+  { id: "day", label: "Latest day", days: 1, scales: ["hour"], scale: "hour" },
+];
+
+// First day of a range, or null for all time. `last` is the last day in the statement.
+function rangeStart(range, last) {
+  if (range.id === "all") return null;
+  if (range.id === "ytd") return new Date(last.getFullYear(), 0, 1);
+  return new Date(last.getFullYear(), last.getMonth(), last.getDate() - (range.days - 1));
+}
 
 // Bar segments, bottom to top, in Pact's colours (lavender grey, purple, amber). Bills count as pre-approved.
 const SEGMENTS = [
@@ -47,6 +67,7 @@ const sumOf = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 
 // Start of the period that a date falls in. Weeks start on Monday, like UK bank apps.
 function periodStart(date, scale) {
+  if (scale === "hour") return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   if (scale === "week") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   if (scale === "month") d.setDate(1);
@@ -55,14 +76,18 @@ function periodStart(date, scale) {
 
 function nextPeriod(d, scale) {
   const n = new Date(d);
+  if (scale === "hour") n.setHours(n.getHours() + 1);
   if (scale === "day") n.setDate(n.getDate() + 1);
   if (scale === "week") n.setDate(n.getDate() + 7);
   if (scale === "month") n.setMonth(n.getMonth() + 1);
   return n;
 }
 
+const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+
 function periodLabel(d, scale) {
   const dm = `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  if (scale === "hour") return `${WEEKDAYS[d.getDay()]} ${dm}, ${hh(d.getHours())}–${hh((d.getHours() + 1) % 24)}`;
   if (scale === "day") return `${WEEKDAYS[d.getDay()]} ${dm}`;
   if (scale === "week") {
     const end = new Date(d.getTime() + 6 * DAY_MS);
@@ -72,10 +97,13 @@ function periodLabel(d, scale) {
 }
 
 // Groups everything into periods. Periods with no spending are kept so time stays evenly spaced.
-function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lines, avgWindow }) {
+// Periods are worked out over the whole statement, so the moving average at the start of the range
+// still uses the history before it, then only the periods overlapping [from, to) are returned.
+function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lines, avgWindow }, from, to) {
   if (days.length === 0) return [];
-  const first = periodStart(parseLocal(days[0].date), scale);
-  const last = periodStart(parseLocal(days[days.length - 1].date), scale);
+  // Hours are only shown for one day, so only build that day's 24.
+  const first = scale === "hour" ? from : periodStart(parseLocal(days[0].date), scale);
+  const last = periodStart(scale === "hour" ? new Date(to.getTime() - 1) : parseLocal(days[days.length - 1].date), scale);
 
   const byKey = new Map();
   for (let d = first; d <= last; d = nextPeriod(d, scale)) {
@@ -95,6 +123,7 @@ function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lin
 
   for (const p of purchases) {
     const b = bucketOf(p.date);
+    if (!b) continue;
     const isBill = BILL_TYPES.has(p.type);
     if (isBill) b.bills += p.amount;
     else b.dayToDay += p.amount;
@@ -102,8 +131,10 @@ function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lin
     b[segmentOf(p)] += p.amount;
     b.items.push(p);
   }
-  for (const d of days) bucketOf(d.date).days.push(d);
-  for (const a of anomalies) bucketOf(a.date)?.anomalies.push(a);
+  if (scale !== "hour") {
+    for (const d of days) bucketOf(d.date).days.push(d);
+    for (const a of anomalies) bucketOf(a.date)?.anomalies.push(a);
+  }
 
   const buckets = [...byKey.values()].map((b) => {
     // Usual range and expected spending for the period: the sum over its days,
@@ -123,7 +154,7 @@ function buildBuckets({ purchases, days, anomalies }, scale, includeBills, { lin
   buckets.forEach((b, i) => {
     b.average = lines && avgWindow && i >= avgWindow - 1 ? sumOf(buckets.slice(i - avgWindow + 1, i + 1), (x) => x.dayToDay) / avgWindow : null;
   });
-  return buckets;
+  return from ? buckets.filter((b) => nextPeriod(b.start, scale) > from && b.start < to) : buckets;
 }
 
 // SVG path for a line, with gaps wherever the value is null.
@@ -144,7 +175,7 @@ function linePath(points) {
 // Loads the statement CSV and works out the analysis from it, then draws the chart.
 // Pass `data` (the output of analyseStatement) to skip loading the file.
 // The user can also upload their own statement CSV; it's read in the browser and never sent anywhere.
-export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_URL, initialScale = "week" }) {
+export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_URL, initialRange = "all", initialScale = "week" }) {
   const [upload, setUpload] = useState(null); // { name, data, id } once the user has uploaded a file
   const [uploadError, setUploadError] = useState(null);
   const loaded = useStatement(data ? null : statementUrl);
@@ -177,7 +208,9 @@ export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_U
     );
   }
   // A new key for each upload resets the view (scale, hover, scroll) for the new data.
-  return <SpendingChartView key={upload?.id ?? "default"} data={d} initialScale={initialScale} upload={uploadControls} />;
+  return (
+    <SpendingChartView key={upload?.id ?? "default"} data={d} initialRange={initialRange} initialScale={initialScale} upload={uploadControls} />
+  );
 }
 
 // "Upload CSV" button, with the uploaded file's name (and a way back to the sample data) or an error.
@@ -216,8 +249,12 @@ function UploadButton({ fileName, error, onFile, onReset }) {
   );
 }
 
-function SpendingChartView({ data, initialScale, upload }) {
-  const [scale, setScale] = useState(initialScale);
+function SpendingChartView({ data, initialRange, initialScale, upload }) {
+  const [rangeId, setRangeId] = useState(RANGES.some((r) => r.id === initialRange) ? initialRange : "all");
+  const range = RANGES.find((r) => r.id === rangeId);
+  const [chosenScale, setScale] = useState(initialScale);
+  // Use the chosen bar size if this range allows it, otherwise the range's usual one.
+  const scale = range.scales.includes(chosenScale) ? chosenScale : range.scale;
   const [includeBills, setIncludeBills] = useState(false);
   const [showUnusual, setShowUnusual] = useState(true);
   const [hovered, setHovered] = useState(null);
@@ -237,17 +274,40 @@ function SpendingChartView({ data, initialScale, upload }) {
   }, [showTable]);
 
   const scaleInfo = SCALES.find((s) => s.id === scale);
-  const buckets = useMemo(() => buildBuckets(data, scale, includeBills, scaleInfo), [data, scale, includeBills, scaleInfo]);
+  // The range runs from `from` (null = all time) up to the end of the statement's last day.
+  const lastDay = data.days.length ? parseLocal(data.days[data.days.length - 1].date) : new Date();
+  const to = new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate() + 1);
+  const from = rangeStart(range, lastDay);
+  const fromTime = from?.getTime() ?? null;
+  const buckets = useMemo(
+    () => buildBuckets(data, scale, includeBills, scaleInfo, fromTime == null ? null : new Date(fromTime), to),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, scale, includeBills, scaleInfo, fromTime, to.getTime()]
+  );
 
-  const dayToDayTotal = sumOf(data.purchases.filter((p) => !BILL_TYPES.has(p.type)), (p) => p.amount);
-  const billsTotal = sumOf(data.purchases.filter((p) => BILL_TYPES.has(p.type)), (p) => p.amount);
+  // Headline numbers for the selected range
+  const inRange = (date) => (!from || parseLocal(date) >= from) && parseLocal(date) < to;
+  const rangePurchases = data.purchases.filter((p) => inRange(p.date));
+  const rangeAnomalies = data.anomalies.filter((a) => inRange(a.date));
+  const dayToDayTotal = sumOf(rangePurchases.filter((p) => !BILL_TYPES.has(p.type)), (p) => p.amount);
+  const billsTotal = sumOf(rangePurchases.filter((p) => BILL_TYPES.has(p.type)), (p) => p.amount);
+  // Dates shown in the header: the range, or less if the statement doesn't go back that far.
+  const firstDay = data.days.length ? parseLocal(data.days[0].date) : lastDay;
+  const firstShown = !from || firstDay > from ? firstDay : from;
+  const fmt = (d, withYear) => `${d.getDate()} ${MONTHS[d.getMonth()]}${withYear ? ` ${d.getFullYear()}` : ""}`;
+  const rangeText =
+    scale === "hour"
+      ? `${periodLabel(lastDay, "day")} ${lastDay.getFullYear()}`
+      : `${fmt(firstShown, firstShown.getFullYear() !== lastDay.getFullYear())} – ${fmt(lastDay, true)}`;
+  const nothingShown = buckets.every((b) => b.total === 0);
   const presentSegments = SEGMENTS.filter((s) => buckets.some((b) => b[s.key] > 0));
-  const presentSeverities = SEVERITY.filter((sev) => data.anomalies.some((a) => a.classification === sev.classification));
+  const markUnusual = showUnusual && scale !== "hour"; // unusual days don't apply to single hours
+  const presentSeverities = SEVERITY.filter((sev) => rangeAnomalies.some((a) => a.classification === sev.classification));
   const hasAverage = buckets.some((b) => b.average != null);
   const hasBand = buckets.some((b) => b.usualHigh != null);
 
   // Layout. If there are too many bars to fit, the chart gets wider and scrolls sideways.
-  const laneH = showUnusual ? 16 : 0; // strip under the bars for unusual-day markers
+  const laneH = markUnusual ? 16 : 0; // strip under the bars for unusual-day markers
   const margin = { top: 10, right: 70, bottom: 32 + laneH, left: 44 };
   const height = 300;
   const minSlot = 5;
@@ -273,12 +333,19 @@ function SpendingChartView({ data, initialScale, upload }) {
 
   // X labels: day of month (or month name), with the month written underneath where it changes.
   // About one label per 44px; in Day view they land on Mondays.
-  const every = scale === "day" ? Math.max(7, Math.ceil(44 / slot / 7) * 7) : Math.max(1, Math.ceil(44 / slot));
-  const firstLabel = scale === "day" ? Math.max(0, buckets.findIndex((b) => b.start.getDay() === 1)) : 0;
+  // In Day view they land on Mondays (unless that leaves too few), in Hour view every 3 hours.
+  const mondayLabels = scale === "day" && buckets.length > 14;
+  const every = mondayLabels
+    ? Math.max(7, Math.ceil(44 / slot / 7) * 7)
+    : scale === "hour"
+      ? Math.max(3, Math.ceil(44 / slot / 3) * 3)
+      : Math.max(1, Math.ceil(44 / slot));
+  const firstLabel = mondayLabels ? Math.max(0, buckets.findIndex((b) => b.start.getDay() === 1)) : 0;
   let lastMonth = null;
   const labels = buckets.map((b, i) => {
     if (i < firstLabel || (i - firstLabel) % every !== 0) return null;
-    if (scale === "month") return { top: MONTHS[b.start.getMonth()] };
+    if (scale === "hour") return { top: hh(b.start.getHours()) };
+    if (scale === "month") return { top: MONTHS[b.start.getMonth()], bottom: i === 0 || b.start.getMonth() === 0 ? String(b.start.getFullYear()) : null };
     const month = b.start.getMonth();
     const showMonth = month !== lastMonth;
     lastMonth = month;
@@ -295,6 +362,12 @@ function SpendingChartView({ data, initialScale, upload }) {
     setHovered(null);
     setScrollX(0);
   };
+  const pickRange = (id) => {
+    setRangeId(id);
+    setScale(RANGES.find((r) => r.id === id).scale); // start each range on its natural bar size
+    setHovered(null);
+    setScrollX(0);
+  };
 
   return (
     <section className="spend-chart">
@@ -302,7 +375,10 @@ function SpendingChartView({ data, initialScale, upload }) {
 
       <div className="sc-head">
         <h2 className="sc-title">Spending</h2>
-        <span className="sc-hint">{showTable ? "Every period, as numbers" : "Hover a bar to inspect it"}</span>
+        <span className="sc-hint">
+          {rangeText} ·{" "}
+          {showTable ? "every period, as numbers" : "hover a bar to inspect it"}
+        </span>
       </div>
 
       <div className="sc-stats">
@@ -316,17 +392,28 @@ function SpendingChartView({ data, initialScale, upload }) {
         </div>
         <div className="sc-stat">
           <span>Unusual days</span>
-          <b>{data.anomalies.length}</b>
+          <b>{rangeAnomalies.length}</b>
         </div>
       </div>
 
+      <div className="sc-scale sc-range" role="radiogroup" aria-label="Time shown">
+        {RANGES.map((r) => (
+          <button key={r.id} role="radio" aria-checked={rangeId === r.id} className={rangeId === r.id ? "on" : ""} onClick={() => pickRange(r.id)}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       <div className="sc-controls">
-        <div className="sc-scale" role="radiogroup" aria-label="Time scale">
-          {SCALES.map((s) => (
-            <button key={s.id} role="radio" aria-checked={scale === s.id} className={scale === s.id ? "on" : ""} onClick={() => pickScale(s.id)}>
-              {s.label}
-            </button>
-          ))}
+        <div className="sc-per">
+          <span>Bars per</span>
+          <div className="sc-scale sc-scale-small" role="radiogroup" aria-label="Bar size">
+            {range.scales.map((id) => (
+              <button key={id} role="radio" aria-checked={scale === id} className={scale === id ? "on" : ""} onClick={() => pickScale(id)}>
+                {SCALES.find((s) => s.id === id).label.toLowerCase()}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="sc-toggles">
           <label className="sc-toggle">
@@ -334,7 +421,7 @@ function SpendingChartView({ data, initialScale, upload }) {
             Include bills
           </label>
           <label className="sc-toggle">
-            <input type="checkbox" checked={showUnusual} onChange={(e) => setShowUnusual(e.target.checked)} />
+            <input type="checkbox" checked={showUnusual} disabled={scale === "hour"} onChange={(e) => setShowUnusual(e.target.checked)} />
             Mark unusual days
           </label>
         </div>
@@ -351,7 +438,7 @@ function SpendingChartView({ data, initialScale, upload }) {
                 <th scope="col" className="num">Pre-approved</th>
                 {hasBand && <th scope="col" className="num">Usual range</th>}
                 {hasAverage && <th scope="col" className="num">Average</th>}
-                {showUnusual && <th scope="col">Unusual</th>}
+                {markUnusual && <th scope="col">Unusual</th>}
               </tr>
             </thead>
             <tbody>
@@ -363,7 +450,7 @@ function SpendingChartView({ data, initialScale, upload }) {
                   <td className="num">{b.preApproved ? pounds(b.preApproved) : "–"}</td>
                   {hasBand && <td className="num">{b.usualHigh == null ? "–" : `${poundsShort(b.usualLow)}–${poundsShort(b.usualHigh)}`}</td>}
                   {hasAverage && <td className="num">{b.average == null ? "–" : pounds(b.average)}</td>}
-                  {showUnusual && (
+                  {markUnusual && (
                     <td className={b.anomalies.length ? "" : "sc-muted"}>
                       {b.anomalies.length === 0
                         ? "–"
@@ -434,7 +521,7 @@ function SpendingChartView({ data, initialScale, upload }) {
                           <rect key={s.key} x={bx} y={top} width={barW} height={h} style={{ fill: s.color }} />
                         );
                       })}
-                      {showUnusual && sev && (
+                      {markUnusual && sev && (
                         <g>
                           <AnomalyMarker
                             x={cx(i) - (b.anomalies.length > 1 ? 5 : 0)}
@@ -464,6 +551,14 @@ function SpendingChartView({ data, initialScale, upload }) {
                     </g>
                   );
                 })}
+
+                {nothingShown && (
+                  <text className="sc-empty-label" x={margin.left + plotW / 2} y={margin.top + plotH / 2} textAnchor="middle">
+                    {`No ${includeBills ? "" : "day-to-day "}spending ${scale === "hour" ? "on this day" : "in this period"}${
+                      !includeBills && buckets.some((b) => b.bills > 0) ? " (bills are hidden)" : ""
+                    }`}
+                  </text>
+                )}
 
                 <path d={linePath(avgPoints)} className="sc-avg-halo" />
                 <path d={linePath(avgPoints)} className="sc-avg" />
@@ -502,7 +597,7 @@ function SpendingChartView({ data, initialScale, upload }) {
               scale={scale}
               scaleInfo={scaleInfo}
               includeBills={includeBills}
-              showUnusual={showUnusual}
+              showUnusual={markUnusual}
               left={Math.max(tipLeft, 0)}
               top={margin.top}
               width={tipW}
@@ -530,7 +625,7 @@ function SpendingChartView({ data, initialScale, upload }) {
             {scaleInfo.avgLabel}
           </li>
         )}
-        {showUnusual &&
+        {markUnusual &&
           presentSeverities.map((sev) => (
             <li key={sev.classification}>
               <svg width="12" height="12" aria-hidden="true">
@@ -552,7 +647,8 @@ function SpendingChartView({ data, initialScale, upload }) {
 }
 
 function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, width }) {
-  const notable = b.items.filter((p) => p.flagged || p.preApproved);
+  // An hour only has a few purchases, so list them all; longer periods list just the notable ones.
+  const notable = scale === "hour" ? b.items : b.items.filter((p) => p.flagged || p.preApproved);
   const segments = [...SEGMENTS].reverse().filter((s) => b[s.key] > 0);
   return (
     <div className="sc-tip" style={{ left, top, width }}>
@@ -613,7 +709,10 @@ function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, wi
           {notable.slice(0, 4).map((p, k) => (
             <div key={k} className="sc-row">
               <span>
-                <b className={`sc-chip ${p.flagged ? "flag" : "pre"}`}>{p.flagged ? "Flagged" : "Pre-approved"}</b>
+                {scale === "hour" && <span className="sc-time">{p.date.slice(11, 16)}</span>}
+                {(p.flagged || p.preApproved) && (
+                  <b className={`sc-chip ${p.flagged ? "flag" : "pre"}`}>{p.flagged ? "Flagged" : "Pre-approved"}</b>
+                )}
                 {p.description}
               </span>
               <span>{pounds(p.amount)}</span>

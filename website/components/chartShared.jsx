@@ -124,6 +124,13 @@ body.night .spend-chart {${NIGHT}
   font-size: 14px; font-weight: 600; cursor: pointer;
 }
 .spend-chart .sc-scale button.on { background: var(--accent); color: var(--accent-ink); }
+.spend-chart .sc-range { display: flex; flex-wrap: wrap; align-self: flex-start; }
+.spend-chart .sc-per { display: flex; align-items: center; gap: 10px; }
+.spend-chart .sc-per > span { font-size: 13px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.6px; }
+.spend-chart .sc-scale-small { padding: 3px; }
+.spend-chart .sc-scale-small button { padding: 4px 12px; font-size: 13px; }
+.spend-chart .sc-toggle:has(input:disabled) { opacity: 0.5; cursor: default; }
+.spend-chart .sc-time { font-family: var(--numfont); color: var(--ink-2); margin-right: 8px; }
 .spend-chart .sc-toggles { display: flex; gap: 6px 18px; flex-wrap: wrap; }
 .spend-chart .sc-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); cursor: pointer; }
 .spend-chart .sc-toggle input { accent-color: var(--accent-2); margin: 0; width: 16px; height: 16px; }
@@ -143,6 +150,7 @@ body.night .spend-chart {${NIGHT}
 .spend-chart .sc-avg-halo { fill: none; stroke: var(--surface); stroke-width: 5; stroke-linejoin: round; pointer-events: none; }
 .spend-chart .sc-dot { fill: var(--ink); stroke: var(--surface); stroke-width: 2; pointer-events: none; }
 .spend-chart svg text.sc-end-label { fill: var(--ink); font-family: var(--body); font-weight: 600; font-size: 12px; }
+.spend-chart svg text.sc-empty-label { fill: var(--ink-2); font-family: var(--body); font-size: 14px; }
 .spend-chart svg text.sc-mark-count { fill: var(--mark); font-family: var(--body); font-weight: 700; font-size: 10.5px; }
 
 /* legend */
