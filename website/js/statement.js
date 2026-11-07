@@ -30,7 +30,8 @@ let transactions = [];
 
 // ---------- Need or want, for one purchase ----------
 // Purchases from the shop/demo panel look like { shop: "Deliveroo", amount: 80.2, category: "takeaway" }.
-// We ignore any "type" already on the purchase: our keyword rules decide.
+// Order: 1. our keyword + category rules  2. what the AI or the user decided for the same shop in
+// their statement (e.g. AI said Boots = need)  3. a "type" the purchase already carries  4. unsure.
 function labelPurchase(tx) {
   const result = SpendSense.classifyByRules({
     description: tx.shop,
@@ -38,7 +39,29 @@ function labelPurchase(tx) {
     type: "expense",
     category: tx.category || null,
   });
-  return { type: result.label, group: result.group, reason: result.reason };
+  if (result.label !== "unsure") return { type: result.label, group: result.group, reason: result.reason };
+
+  const learned = learnedLabel(tx.shop);
+  if (learned) return { type: learned.label, group: result.group, reason: learned.reason, learned: true };
+
+  if (tx.type === "need" || tx.type === "want") {
+    return { type: tx.type, group: result.group, reason: `Marked as a ${tx.type}` };
+  }
+  return { type: "unsure", group: result.group, reason: result.reason };
+}
+
+// The label the AI or the user gave this shop in the uploaded statement (most common one), or null.
+function learnedLabel(shop) {
+  const key = SpendSense.findKeyword(shop)?.keyword || SpendSense.normalise(shop);
+  const votes = { need: 0, want: 0 };
+  (statement?.classified || []).forEach((t) => {
+    if (!["ai", "you"].includes(t.source) || !(t.label in votes)) return;
+    const theirs = SpendSense.findKeyword(t.description)?.keyword || SpendSense.normalise(t.description);
+    if (theirs === key) votes[t.label] += 1;
+  });
+  if (votes.need === votes.want) return null;
+  const label = votes.need > votes.want ? "need" : "want";
+  return { label, reason: `Learned from your statement: usually a ${label}` };
 }
 
 // ---------- What's "usual" for this person ----------
@@ -72,8 +95,8 @@ function usualSpend(group) {
 
 // A live purchase this many times the user's usual gets a nudge ("Still want it?").
 // Lower than the 3x used for statement warnings (impulse.js), because a nudge is gentle:
-// one tap and it goes through. E.g. usual takeaway £30 → a £80 takeaway (2.7x) is nudged.
-const NUDGE_MULTIPLE = 2.5;
+// one tap and it goes through. E.g. usual takeaway £30 → a £70 takeaway (2.3x) is nudged.
+const NUDGE_MULTIPLE = 2;
 
 // Is this purchase much bigger than usual? At least NUDGE_MULTIPLE x usual, and at least £30
 // (impulse.js SETTINGS.bigWantMinimum, so £9 vs £3 isn't flagged). Needs are never compared.
@@ -103,8 +126,62 @@ function useStatement(fileName, csvText) {
 
   const count = (label) => classified.filter((t) => t.label === label).length;
   toast(`📄 ${fileName} loaded`,
-    `${parsed.length} transactions: ${count("need")} needs, ${count("want")} wants, ${count("unsure")} unsure. ` +
+    `${parsed.length} transactions: ${count("need")} needs, ${count("want")} wants, ${count("unsure")} not sure. ` +
     "Pact now uses your own spending to decide what's unusual.");
+  askAiAboutUnsure();
+}
+
+// ---------- AI for the "not sure" ones ----------
+// Sends ONLY the unsure payments' description + amount to the small helper inside `npm run dev`
+// (vite.config.mjs), which asks Gemini with the key in .env. The key never reaches this page.
+// No helper (file opened from disk), no key, or Gemini busy: the user just picks need/want.
+let aiStatus = ""; // shown on the Needs & wants page
+
+async function askAiAboutUnsure() {
+  const unsure = statement.classified.filter((t) => t.label === "unsure");
+  if (unsure.length === 0) return;
+  if (!location.protocol.startsWith("http")) {
+    setAiStatus("🤖 AI can sort the not-sure ones when Pact is opened with npm run dev. For now, pick need or want yourself.");
+    return;
+  }
+  setAiStatus(`🤖 AI is looking at ${unsure.length} not-sure payments…`);
+  const forStatement = statement;
+  try {
+    const response = await fetch("api/classify-unsure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: unsure.map((t) => ({ description: t.description, amount: t.amount })) }),
+    });
+    const { ai, answers = [] } = await response.json();
+    if (statement !== forStatement) return; // a different file was uploaded meanwhile
+    if (ai === "off") return setAiStatus("🤖 AI is off (no GEMINI_API_KEY in .env). Pick need or want yourself.");
+    if (ai !== "ok") return setAiStatus("🤖 AI couldn't help right now (Gemini is busy). Pick need or want yourself.");
+
+    let sorted = 0;
+    answers.forEach((a) => {
+      const t = unsure[a.id];
+      if (!t || t.label !== "unsure") return; // the user already chose
+      t.source = "ai";
+      t.reason = a.reason;
+      t.confidence = a.confidence;
+      if (a.label !== "unsure") { t.label = a.label; sorted += 1; }
+    });
+    statement.flags = SpendSense.detectImpulseSpending(statement.classified);
+    save("pact.statement", statement);
+    buildTransactions();
+    renderStatement();
+    const left = statement.classified.filter((t) => t.label === "unsure").length;
+    setAiStatus(`🤖 AI sorted ${sorted} of ${unsure.length} not-sure payments.` +
+      (left ? ` ${left} still can't be told apart (like cash or Amazon), so you decide.` : ""));
+    toast("🤖 AI sorted your not-sure payments", `${sorted} of ${unsure.length} now labelled need or want.`);
+  } catch {
+    if (statement === forStatement) setAiStatus("🤖 AI isn't reachable. Pick need or want yourself.");
+  }
+}
+
+function setAiStatus(text) {
+  aiStatus = text;
+  renderStatementPage();
 }
 
 // The shared transactions list (shape at the top of this file).
@@ -185,6 +262,7 @@ function displayName(t) {
 const nice = (group) => group.replace(/\//g, " / ").replace(/^./, (c) => c.toUpperCase());
 function whyText(t) {
   if (t.source === "you") return "You chose this";
+  if (t.source === "ai") return `🤖 AI: ${t.reason}`;
   if (t.label === "unsure") return t.group ? `${nice(t.group)}: could be either, you decide` : "We don't know this one yet, you decide";
   return t.group ? nice(t.group) : t.reason;
 }
@@ -194,6 +272,8 @@ function renderStatementPage() {
   if (!results) return;
   results.hidden = !statement;
   $("ss-empty").hidden = Boolean(statement);
+  $("ss-ai").textContent = aiStatus;
+  $("ss-ai").hidden = !statement || !aiStatus;
   $("statement-upload-page").textContent = statement ? "📄 Upload a different statement" : "📄 Upload a statement";
   if (!statement) return;
 

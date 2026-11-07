@@ -19,6 +19,13 @@ Needs Node 22 or newer.
 **Optional AI:** copy `.env.example` to `.env` and paste a key from https://aistudio.google.com/apikey.
 Without a key everything still works; the tricky transactions just stay "unsure".
 
+**AI on the website:** run the site with `npm run dev` and upload a statement on the **Needs & wants** page.
+The "not sure" payments (description + amount only) go to a small helper inside the dev server
+(`/api/classify-unsure` in `vite.config.mjs`), which asks Gemini with the key from `.env`. The key never
+reaches the browser. If one Gemini model is busy, the next one in `FALLBACK_MODELS` (`gemini.js`) is tried.
+Whatever the AI can't tell (cash, Amazon...) keeps Need/Want buttons so the user decides. Opened straight
+from disk, or with no key, the site still works with rules only.
+
 ## How it decides (the 30-second pitch)
 
 The code works through these steps in order, cheapest and most predictable first:

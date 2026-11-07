@@ -295,8 +295,7 @@ $("open-shop").addEventListener("click", () => {
   window.open("shop.html", "pact-shop", "width=560,height=780");
 });
 
-$("presets").replaceChildren(...DEMO.purchases.map((p) =>
-  button(p.label, "preset", () => handlePurchase(p))));
+// (The "Story purchases" buttons were removed from the demo page; "Try a purchase" has examples.)
 
 // Custom purchase: any shop, amount, category and time.
 $("custom-category").replaceChildren(...Object.entries(DEMO.categories).map(([name, type]) => {

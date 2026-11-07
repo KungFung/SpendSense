@@ -299,6 +299,7 @@ body.night #view-alternatives :focus-visible { outline-color: #d9c2ef; }
 
 /* ---------- Smaller screens ---------- */
 /* ---------- Needs & wants page (statement.js) ---------- */
+.ss-ai { margin: 0 0 20px; padding: 14px 18px; font-size: 14px; color: var(--purple-800); background: var(--purple-50); }
 .ss-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; }
 .ss-total { display: flex; flex-direction: column; gap: 4px; border-top: 4px solid var(--line); }
 .ss-total span { font-size: 14px; font-weight: 700; color: var(--muted); }

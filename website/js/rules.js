@@ -31,7 +31,8 @@ function checkPurchase(tx) {
   //    not from a label typed into the purchase.
   const label = labelPurchase(tx);
   if (label.type === "need") {
-    return { action: "allow", reason: `Essentials are never held (${label.group}).` };
+    const why = label.learned ? "your statement says this shop is usually a need" : label.group || "a need";
+    return { action: "allow", reason: `Essentials are never held (${why}).` };
   }
 
   // 2. Planned purchases: through once cooled off, held while still cooling.

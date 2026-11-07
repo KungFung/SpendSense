@@ -20,6 +20,12 @@ try {
 
 const DEFAULT_MODEL = "gemini-3.8-flash";
 
+// If the chosen model is busy (503), too slow (504) or not available (404), try these next.
+// On 7 Nov 2026 gemini-3.8-flash was overloaded while these answered in 1-5 seconds
+// (gemini-2.5-flash is no longer offered to new keys).
+const FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+const TOTAL_WAIT_MS = 45000; // never keep the user waiting longer than this in total
+
 // What we want back: a list of { id, label, confidence, reason }.
 // Gemini is told to follow this JSON Schema exactly.
 const RESPONSE_SCHEMA = {
@@ -72,30 +78,43 @@ async function askGeminiAboutUnsure(unsureTransactions, options = {}) {
   const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey && !options.client) return []; // AI switched off: no key
 
-  try {
-    let client = options.client;
-    if (!client) {
+  let client = options.client;
+  if (!client) {
+    try {
       const { GoogleGenAI } = require("@google/genai");
-      client = new GoogleGenAI({ apiKey, httpOptions: { timeout: 15000 } }); // give up after 15s
+      client = new GoogleGenAI({ apiKey, httpOptions: { timeout: 12000 } }); // give up on a model after 12s
+    } catch (error) {
+      console.warn(`[classifier] Gemini SDK missing (run npm install): ${error.message}`);
+      return [];
     }
-
-    // id = position in the list, so we can match answers back. Only description + amount.
-    const items = unsureTransactions.map((t, id) => ({ id, description: maskDigits(t.description), amount: t.amount }));
-
-    const response = await client.models.generateContent({
-      model: options.model || process.env.GEMINI_MODEL || DEFAULT_MODEL,
-      contents: buildPrompt(items),
-      config: { responseMimeType: "application/json", responseJsonSchema: RESPONSE_SCHEMA, temperature: 0 },
-    });
-
-    const answers = JSON.parse(response.text);
-    if (!Array.isArray(answers)) return [];
-    return answers.map((a) => cleanAnswer(a, items.length)).filter(Boolean);
-  } catch (error) {
-    // Bad key, no internet, quota, weird reply... we just carry on without AI.
-    console.warn(`[classifier] Gemini skipped, keeping those as "unsure": ${String(error.message).slice(0, 120)}`);
-    return [];
   }
+
+  // id = position in the list, so we can match answers back. Only description + amount.
+  const items = unsureTransactions.map((t, id) => ({ id, description: maskDigits(t.description), amount: t.amount }));
+  const first = options.model || process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  const models = options.client ? [first] : [...new Set([first, ...FALLBACK_MODELS])];
+
+  const giveUpAt = Date.now() + TOTAL_WAIT_MS;
+  for (const model of models) {
+    if (Date.now() > giveUpAt) break;
+    try {
+      const response = await client.models.generateContent({
+        model,
+        contents: buildPrompt(items),
+        config: { responseMimeType: "application/json", responseJsonSchema: RESPONSE_SCHEMA, temperature: 0 },
+      });
+      const answers = JSON.parse(response.text);
+      if (!Array.isArray(answers)) return [];
+      return answers.map((a) => cleanAnswer(a, items.length)).filter(Boolean);
+    } catch (error) {
+      const message = String(error.message);
+      const busy = /"code":\s*(503|504|429|404|500)|UNAVAILABLE|DEADLINE|NOT_FOUND|timed? ?out|aborted/i.test(message);
+      console.warn(`[classifier] Gemini ${model} failed${busy ? ", trying the next model" : ""}: ${message.slice(0, 120)}`);
+      if (!busy) break; // bad key or a weird reply: other models won't help
+    }
+  }
+  // Nothing worked: we just carry on without AI and those stay "unsure".
+  return [];
 }
 
-module.exports = { askGeminiAboutUnsure, maskDigits, buildPrompt, DEFAULT_MODEL };
+module.exports = { askGeminiAboutUnsure, maskDigits, buildPrompt, DEFAULT_MODEL, FALLBACK_MODELS };

@@ -53,7 +53,10 @@ function createApp() {
       getElementById: id => elements.get(id) ?? null,
       createElement: () => new Element(), body: new Element(),
       querySelectorAll: selector => selector === '.view' ? views : selector.includes('[data-tab]') ? tabs : [],
+      addEventListener() {}, dispatchEvent() {},
     },
+    location: { protocol: 'file:' }, // like opening index.html from disk
+    CustomEvent: class CustomEvent { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     window: { addEventListener() {} }, setInterval() {}, setTimeout() {},
   });

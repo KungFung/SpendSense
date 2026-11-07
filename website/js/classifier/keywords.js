@@ -46,7 +46,7 @@ const KEYWORD_RULES = [
     group: "fast food/takeaway",
     keywords: ["MCDONALDS", "MCDONALD'S", "BURGER KING", "KFC", "DELIVEROO", "JUST EAT", "UBER EATS", "DOMINOS", "PIZZA HUT", "GREGGS", "NANDOS", "FIVE GUYS"],
   },
-  { label: "want", group: "coffee/eating out", keywords: ["COSTA", "STARBUCKS", "PRET", "CAFFE NERO", "WETHERSPOON", "WAGAMAMA"] },
+  { label: "want", group: "coffee/eating out", keywords: ["COSTA", "STARBUCKS", "PRET", "CAFFE NERO", "WETHERSPOON", "WAGAMAMA", "DINNER"] },
   { label: "want", group: "fashion", keywords: ["ASOS", "PRIMARK", "H&M", "ZARA", "TK MAXX", "SHEIN", "BOOHOO", "JD SPORTS", "NEXT RETAIL"] },
   { label: "want", group: "gaming", keywords: ["STEAM", "PLAYSTATION", "XBOX", "NINTENDO", "EPIC GAMES"] },
   {
