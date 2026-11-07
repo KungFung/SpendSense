@@ -131,6 +131,15 @@ export function parseStatement(text) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// Reads a statement CSV the user picked (an <input type="file"> File) and analyses it.
+// Runs entirely in the browser. Throws an Error with a readable message if the file can't be used.
+export async function readStatementFile(file) {
+  if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") throw new Error("That isn't a CSV file");
+  const transactions = parseStatement(await file.text());
+  if (!transactions.some((t) => t.value < 0)) throw new Error("No spending found in that file");
+  return analyseStatement(transactions);
+}
+
 // ---------- React hook ----------
 
 // Each URL is fetched and analysed once, then shared by every chart that asks for it.

@@ -12,6 +12,20 @@ The full project plan (features, ethics, architecture, demo script) is in [PROJE
 Open `website/index.html` in Chrome or Safari (double-click it in Finder). No install needed.
 Open it in a browser, not an editor preview, or the CSS and JS files won't load.
 
+## Run the spending chart
+
+Needs Node 22 or newer.
+
+```
+npm install    # once
+npm run dev    # starts a local server and opens http://localhost:5173/chart.html
+```
+
+The chart (`website/components/SpendingChart.jsx`) reads `statement_withinfo.csv` and works out the moving average,
+usual range and unusual days in the browser. "Upload CSV" loads a different statement; it never leaves your browser.
+
+`npm run build` puts a static copy in `dist/`.
+
 ## Who owns what
 
 Only edit your own files. If you need a change in someone else's file, ask them.

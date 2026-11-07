@@ -31,7 +31,7 @@ function median(values) {
 // transactions: output of parseStatement (money in and out).
 // Returns:
 //   purchases: money going out, oldest first   { date, type, description, amount, flagged, preApproved }
-//   days:      one row per day, no gaps         { date, total, variable, bills, baseline, score, classification }
+//   days:      one row per day, no gaps         { date, total, variable, bills, baseline, usualLow, usualHigh, score, classification }
 //   anomalies: the unusual days                 { date, classification, actual, expected, difference, score, largestTransaction }
 export function analyseStatement(transactions, settings = DETECTION_SETTINGS) {
   const s = { ...DETECTION_SETTINGS, ...settings };
@@ -82,6 +82,8 @@ export function analyseStatement(transactions, settings = DETECTION_SETTINGS) {
     ).map((d) => d.variable);
 
     day.baseline = null;
+    day.usualLow = null;
+    day.usualHigh = null;
     day.score = null;
     day.classification = "Insufficient history";
     if (values.length < s.minimumHistory) return;
@@ -92,6 +94,10 @@ export function analyseStatement(transactions, settings = DETECTION_SETTINGS) {
     const difference = day.variable - baseline;
 
     day.baseline = baseline;
+    // Usual range for the day. The top is exactly where "Elevated" starts (score >= 1.5 and at
+    // least £10 over expected), so a day is unusual exactly when its spending is above this range.
+    day.usualHigh = baseline + Math.max(s.elevatedThreshold * scale, s.minimumDifference);
+    day.usualLow = Math.max(0, baseline - s.elevatedThreshold * scale);
     day.score = difference / scale;
     day.difference = difference;
     day.classification = "Normal";
@@ -121,12 +127,14 @@ export function analyseStatement(transactions, settings = DETECTION_SETTINGS) {
 
   return {
     purchases,
-    days: days.map(({ date, total, variable, bills, baseline, score, classification }) => ({
+    days: days.map(({ date, total, variable, bills, baseline, usualLow, usualHigh, score, classification }) => ({
       date,
       total,
       variable,
       bills,
       baseline,
+      usualLow,
+      usualHigh,
       score,
       classification,
     })),
