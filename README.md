@@ -1,8 +1,8 @@
-# Pact
+# SpendSense
 
 **A promise from you, to you.**
 
-Pact lets your calm self set the rules that protect you on your worst day, and steps in before the damage is done.
+SpendSense lets your calm self set the rules that protect you on your worst day, and steps in before the damage is done.
 Built at GreatUniHack 2026 for the NatWest challenge: *AI-Powered Financial Inclusion & Resilience*.
 
 The full project plan (features, ethics, architecture, demo script) is in [PROJECT.md](PROJECT.md).

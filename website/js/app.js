@@ -18,7 +18,7 @@ function renderClock() {
   $("clock").textContent = now.toLocaleString("en-GB", {
     weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
   });
-  $("status-title").textContent = night ? "Your pact is on watch" : "You're calm today";
+  $("status-title").textContent = night ? "SpendSense is on watch" : "You're calm today";
   $("greeting").textContent =
     night ? "Still up?" : h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,";
 
@@ -36,7 +36,7 @@ function renderClock() {
   } else {
     risk.className = "card risk";
     $("risk-title").textContent = "Tonight looks calm";
-    $("risk-text").textContent = "Your riskiest time is payday Fridays, 11pm–3am. Pact will remind you.";
+    $("risk-text").textContent = "Your riskiest time is payday Fridays, 11pm–3am. SpendSense will remind you.";
   }
 }
 
@@ -104,7 +104,7 @@ function renderRules() {
 
 // ---------- Navigation ----------
 const TITLES = {
-  home: "Jordan", statement: "Needs & wants", plan: "Plan a purchase", pact: "My Pact",
+  home: "Jordan", statement: "Needs & wants", plan: "Plan a purchase", pact: "My rules",
   demo: "Demo controls", alternatives: "Explore alternatives", pots: "Savings pots",
 };
 
@@ -152,7 +152,7 @@ function handlePurchase(purchase) {
       id: Date.now().toString(36),
       shop: tx.shop,
       amount: tx.amount,
-      ruleText: decision.rule?.text ?? "Your pact",
+      ruleText: decision.rule?.text ?? "Your rules",
       reason: decision.reason ?? "",
       planId: decision.plan?.id ?? null,
       createdAt: Date.now(),
@@ -314,7 +314,7 @@ $("custom-category").value = "clothes";
 function showCustomType() {
   const shop = $("custom-shop").value.trim();
   if (!shop) {
-    $("custom-type").textContent = "Type a shop and Pact will tell you if it's a need or a want.";
+    $("custom-type").textContent = "Type a shop and SpendSense will tell you if it's a need or a want.";
     $("custom-type").className = "try-guess";
     return;
   }
@@ -322,10 +322,10 @@ function showCustomType() {
   const kind = label.group ? ` (${label.group})` : "";
   $("custom-type").className = "try-guess " + label.type;
   $("custom-type").textContent = label.type === "need"
-    ? `Pact thinks: NEED${kind}. Needs are always let through.`
+    ? `SpendSense thinks: NEED${kind}. Needs are always let through.`
     : label.type === "want"
-      ? `Pact thinks: WANT${kind}. Pact checks it against your rules and your usual spending.`
-      : `Pact thinks: WANT${kind}. This shop sells both, so Pact treats it as a want to be safe.`;
+      ? `SpendSense thinks: WANT${kind}. SpendSense checks it against your rules and your usual spending.`
+      : `SpendSense thinks: WANT${kind}. This shop sells both, so SpendSense treats it as a want to be safe.`;
 }
 ["custom-shop", "custom-amount", "custom-category"].forEach((id) => $(id).addEventListener("input", showCustomType));
 showCustomType();
@@ -333,8 +333,8 @@ showCustomType();
 // Show Pact's answer right under the form.
 const RESULT_TEXT = {
   allow: ["✅ Approved", "It went through."],
-  nudge: ["💬 Nudge: Pact asked \"Still want it?\"", "Answer in the pop-up."],
-  hold: ["⏸️ Held", "Pact paused it. Decide on the hold screen."],
+  nudge: ["💬 Nudge: SpendSense asked \"Still want it?\"", "Answer in the pop-up."],
+  hold: ["⏸️ Held", "SpendSense paused it. Decide on the hold screen."],
 };
 function showTryResult(action, reason) {
   const [title, fallback] = RESULT_TEXT[action];

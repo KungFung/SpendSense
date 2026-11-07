@@ -120,7 +120,7 @@ function compareWithUsual(tx) {
 function useStatement(fileName, csvText) {
   const parsed = SpendSense.parseStatementCsv(csvText).filter((t) => t.date && Number.isFinite(t.amount));
   if (parsed.length === 0) {
-    toast("📄 Couldn't read that file", "Pact needs a CSV with Date, Description and Amount (or Value) columns.");
+    toast("📄 Couldn't read that file", "SpendSense needs a CSV with Date, Description and Amount (or Value) columns.");
     return;
   }
   const classified = parsed.map(SpendSense.classifyByRules);
@@ -133,7 +133,7 @@ function useStatement(fileName, csvText) {
   const count = (label) => classified.filter((t) => t.label === label).length;
   toast(`📄 ${fileName} loaded`,
     `${parsed.length} transactions read. ` +
-    (count("unsure") ? `The AI is checking ${count("unsure")} that our rules couldn't place.` : "Pact now uses your own spending to decide what's unusual."));
+    (count("unsure") ? `The AI is checking ${count("unsure")} that our rules couldn't place.` : "SpendSense now uses your own spending to decide what's unusual."));
   if (typeof notifyChart === "function") notifyChart({ type: "pact:statement-changed" });
   askAiAboutUnsure();
 }
@@ -150,7 +150,7 @@ async function askAiAboutUnsure() {
   const unsure = statement.classified.filter((t) => t.label === "unsure");
   if (unsure.length === 0) return;
   if (!location.protocol.startsWith("http")) {
-    return guessWants(unsure, "Treated as a want for now: the AI works when Pact runs with npm run dev.");
+    return guessWants(unsure, "Treated as a want for now: the AI works when SpendSense runs with npm run dev.");
   }
   const forStatement = statement;
   aiChecking = true;

@@ -32,7 +32,7 @@ const DEMO = {
     { id: "kwikfit", label: "🔧 Kwik Fit £79.99 at 9:30am", shop: "Kwik Fit", amount: 79.99, category: "car repair", type: "need", time: "09:30" },
     { id: "deliveroo", label: "🍔 Deliveroo £80.20 at 11:48pm", shop: "Deliveroo", amount: 80.2, category: "takeaway", type: "want", time: "23:48" },
     { id: "asos", label: "🛍️ Klarna × ASOS £340 at 1:47am", shop: "Klarna × ASOS", amount: 340, category: "clothes", type: "want", bnpl: true, time: "01:47" },
-    { id: "tv", label: "📺 Currys TV £450 (Pact's clock)", shop: "Currys TV", amount: 450, category: "electronics", type: "want" },
+    { id: "tv", label: "📺 Currys TV £450 (SpendSense's clock)", shop: "Currys TV", amount: 450, category: "electronics", type: "want" },
   ],
 };
 

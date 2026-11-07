@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Checkout</title>
-  <!-- A pretend online shop for the demo. Paying sends the purchase to Pact. -->
+  <!-- A pretend online shop for the demo. Paying sends the purchase to SpendSense. -->
   <style>
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -82,7 +82,7 @@ let waiting = null;
 const el = (id) => document.getElementById(id);
 const purchaseFor = (shop) => {
   const p = DEMO.purchases.find((x) => x.id === shop.purchase);
-  const { time, ...rest } = p; // no fixed time: Pact uses its own clock
+  const { time, ...rest } = p; // no fixed time: SpendSense uses its own clock
   return rest;
 };
 
@@ -128,15 +128,15 @@ function showResult(action, title, text) {
 function onResult(data) {
   if (data?.type !== "pact:result") return;
   if (data.action === "hold") {
-    showResult("hold", "⏸️ Payment paused by your bank", "Your Pact is holding this payment. Open the app to decide.");
+    showResult("hold", "⏸️ Payment paused by your bank", "SpendSense is holding this payment. Open the app to decide.");
   } else if (data.action === "nudge") {
-    showResult("nudge", "💬 Check your Pact app", "Quick question before this goes through: still want it?");
+    showResult("nudge", "💬 Check your SpendSense app", "Quick question before this goes through: still want it?");
   } else {
     showResult("allow", "✅ Payment approved", "Thanks for your order!");
   }
 }
 
-// Opened from Pact's demo panel → talk to it directly. Opened on its own → BroadcastChannel.
+// Opened from SpendSense's demo panel → talk to it directly. Opened on its own → BroadcastChannel.
 let channel = null;
 try {
   channel = new BroadcastChannel("pact");
@@ -149,8 +149,8 @@ el("pay").addEventListener("click", () => {
   el("pay").disabled = true;
   if (window.opener && !window.opener.closed) window.opener.postMessage(msg, "*");
   else if (channel) channel.postMessage(msg);
-  waiting = setTimeout(() => showResult("error", "Couldn't reach Pact",
-    "Open this shop from the 🎬 Demo panel in Pact, and keep the Pact window open."), 1500);
+  waiting = setTimeout(() => showResult("error", "Couldn't reach SpendSense",
+    "Open this shop from the 🎬 Demo panel in SpendSense, and keep the SpendSense window open."), 1500);
 });
 
 el("shops").replaceChildren(...SHOPS.map((shop) => {

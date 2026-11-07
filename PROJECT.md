@@ -1,14 +1,14 @@
-# Pact
+# SpendSense
 
 **A promise from you, to you.**
 
 GreatUniHack 2026 · NatWest challenge: *AI-Powered Financial Inclusion & Resilience*
 
-> Pact lets your calm self set the rules that protect you on your worst day, and steps in before the damage is done.
+> SpendSense lets your calm self set the rules that protect you on your worst day, and steps in before the damage is done.
 
 ---
 
-## 1. Why Pact
+## 1. Why SpendSense
 
 ### The problem
 Some people lose control of spending at predictable moments: during a low or manic episode, with ADHD impulsivity, after a relapse, or at 2am on payday. Money problems and mental health problems feed each other (see the Money and Mental Health Policy Institute's research). In those moments a budgeting chatbot doesn't help.
@@ -22,7 +22,7 @@ Some people lose control of spending at predictable moments: during a low or man
 | Round Ups, Savings Goals, credit score | Helps people save | Assumes you're already doing fine |
 | Financial Health Check, Banking My Way | Human support for vulnerable customers | You have to ask for it |
 
-Rival banks are the same: Starling (Spending Intelligence) and Monzo both have spending chat. **Every bank's AI now tells you what you spent. Pact stops the crisis before it happens.**
+Rival banks are the same: Starling (Spending Intelligence) and Monzo both have spending chat. **Every bank's AI now tells you what you spent. SpendSense stops the crisis before it happens.**
 
 ### The story
 Psychiatrists use the term **"Ulysses contract"** for decisions someone makes while they're well, to protect themselves later. It comes from Ulysses having his crew tie him to the mast so he could hear the Sirens without steering onto the rocks.
@@ -65,7 +65,7 @@ Plain code, not AI. At the moment of payment it decides one of: **allow · nudge
 For big things the user genuinely wants (a TV, a laptop, a sofa). They don't want the purchase cancelled; they just want to be sure it isn't an impulse.
 
 **How it works**
-1. **Plan it in advance.** The user tells Pact: *"I want to buy a TV, about £450, from Currys."*
+1. **Plan it in advance.** The user tells SpendSense: *"I want to buy a TV, about £450, from Currys."*
 2. **The cooling-off period starts.** Its length depends on the price:
 
    | Price | Cooling-off period |
@@ -79,8 +79,8 @@ For big things the user genuinely wants (a TV, a laptop, a sofa). They don't wan
 5. **Changed your mind?** Cancel at any time. The amount is added to **"£ kept by changing your mind."**
 
 **Rules**
-- Unplanned big purchase → **held**, and Pact offers **"Plan it instead"**, which starts the cooling-off period from that moment.
-- The user can **make a cooling-off period longer, never shorter** (the same "tighten instantly, loosen slowly" principle as everywhere else in Pact).
+- Unplanned big purchase → **held**, and SpendSense offers **"Plan it instead"**, which starts the cooling-off period from that moment.
+- The user can **make a cooling-off period longer, never shorter** (the same "tighten instantly, loosen slowly" principle as everywhere else in SpendSense).
 - Completing a planned purchase **never breaks the streak**. Planning ahead is exactly the behaviour we want to reward.
 - **Essentials are never held** (groceries, pharmacy, transport, fuel, household bills), so a broken fridge or boiler isn't blocked. The emergency button still works.
 
@@ -90,7 +90,7 @@ Like a game or a recovery app: **how many days in a row you've stayed on track.*
 **What "on track" means for a day**
 - ✅ Spending stayed inside the pact (no rule was broken and no hold was overridden)
 - ✅ Non-essential spending stayed within the user's daily allowance (optional, set during setup)
-- ✅ Holds **don't** break the streak, because a hold means Pact did its job
+- ✅ Holds **don't** break the streak, because a hold means SpendSense did its job
 - ✅ Planned purchases **don't** break the streak
 - ❌ Using the emergency button on a non-essential purchase, or going over the daily allowance, ends the streak
 
@@ -111,7 +111,7 @@ Strict streaks can backfire. Psychologists call this the **"abstinence violation
 
 ### 2.6 The hold (the moment that matters)
 The screen dims:
-> *Your Pact is holding £340 at Klarna × ASOS*
+> *Your SpendSense is holding £340 at Klarna × ASOS*
 > 🔊 *(the user's own voice note plays)*
 > *Rule: "Over £50 after midnight", which you set on 3 Oct*
 
@@ -123,7 +123,7 @@ Options: **⏳ Wait** (purchase saved, with a countdown) · **📅 Plan it inste
 - The user chooses when they're told: never, only during a rough patch, or after every hold.
 
 ### 2.8 Morning after and monthly view
-- *"Last night Pact held 1 purchase. Still want it?"*
+- *"Last night SpendSense held 1 purchase. Still want it?"*
 - *"£610 protected this month · 🔥 12-day streak · £450 kept by changing your mind."*
 
 ### 2.9 Key principle: tighten instantly, loosen slowly
@@ -135,10 +135,10 @@ The user is always in control, just not on impulse.
 ---
 
 ## 3. Ethics and safety
-| Principle | How Pact applies it |
+| Principle | How SpendSense applies it |
 |---|---|
 | User autonomy | The user writes every rule; holds are temporary; there's an emergency override |
-| No diagnosis | Pact never guesses at mental health conditions. Health information is "special category" data under UK GDPR, so it needs explicit consent and is kept to a minimum |
+| No diagnosis | SpendSense never guesses at mental health conditions. Health information is "special category" data under UK GDPR, so it needs explicit consent and is kept to a minimum |
 | Transparency | Every hold shows the rule that caused it and when the user set it |
 | AI never makes the decision | The AI drafts rules and explains things. Plain code makes every hold decision |
 | Privacy | The trusted person gets signals only, never transaction details |
@@ -205,7 +205,7 @@ on payment:
 ```
 
 ### Notes
-- **Stripe Issuing:** Stripe asks our server to approve or decline each card payment in real time (within about 2 seconds). A "hold" is a decline that Pact saves as a held purchase. Check in **hour 1** that Issuing can be turned on in test mode; if it can't, use a pretend payment endpoint that behaves the same way.
+- **Stripe Issuing:** Stripe asks our server to approve or decline each card payment in real time (within about 2 seconds). A "hold" is a decline that SpendSense saves as a held purchase. Check in **hour 1** that Issuing can be turned on in test mode; if it can't, use a pretend payment endpoint that behaves the same way.
 - **Data:** one main character (Jordan, 26) with 12 months of synthetic transactions, including late-night BNPL binges around payday. The NatWest sandbox shows the integration is real.
 
 ---
@@ -259,13 +259,13 @@ on payment:
 5. **1:35** **The TV.** Jordan actually wants a £450 TV, so they **plan it**: a 48-hour cooling-off period starts (sped up for the demo). Halfway: *"Still want it?"* Yes → ready → the payment goes through at 2am with no hold. 🔥 The streak moves to 12.
 6. **2:10** Morning after: *"£610 protected · 12-day streak · Sam saw only a check-in."*
 7. **2:25** Trust and fit: plain code decides, AI only writes and explains, essentials are never held, loosening takes 48 hours, and it builds on NatWest's existing card controls.
-8. **2:45** *"A promise from you, to you. Pact."*
+8. **2:45** *"A promise from you, to you. SpendSense."*
 
 ## 9. Questions judges will ask, with answers
 | Question | Answer |
 |---|---|
 | Can't they just turn it off? | Loosening takes 48 hours, like the gambling block. They're free to leave, just not on impulse |
-| Isn't this controlling people? | The user writes every rule. Pact only enforces the user's own decisions |
+| Isn't this controlling people? | The user writes every rule. SpendSense only enforces the user's own decisions |
 | What if I genuinely need a big purchase? | Plan it. The cooling-off period proves it isn't an impulse, then it goes through without a hold |
 | What about real emergencies? | Essentials are never held, and there's an emergency button that releases a payment immediately |
 | Won't a broken streak make people feel worse? | Grace days, "26 of the last 30 days" wording, and no leaderboards |

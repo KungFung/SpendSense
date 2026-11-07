@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pact</title>
+  <title>SpendSense</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/pots.css" />
 </head>
@@ -11,8 +11,8 @@
   <!-- ================= SIDEBAR ================= -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">P</div>
-      <div>Pact<small>A promise from you, to you.</small></div>
+      <div class="brand-mark">S</div>
+      <div>SpendSense<small>A promise from you, to you.</small></div>
     </div>
 
     <nav class="nav">
@@ -26,7 +26,7 @@
       </button>
       <button type="button" data-tab="pact">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
-        My Pact
+        My rules
       </button>
       <button type="button" data-tab="alternatives">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21V10M12 14C5 14 3 9 3 3c6 0 9 3 9 8M12 17c7 0 9-5 9-11-6 0-9 3-9 8"/></svg>
@@ -82,7 +82,7 @@
       </div>
 
       <div class="wins">
-        <div class="card win"><strong class="num" id="protected"></strong><span>protected by your pact this month</span></div>
+        <div class="card win"><strong class="num" id="protected"></strong><span>protected by your rules this month</span></div>
         <div class="card win"><strong class="num" id="kept-home"></strong><span>kept by changing your mind</span></div>
       </div>
 
@@ -91,7 +91,7 @@
           <div class="icon">🛡️</div>
           <div>
             <h3><span class="dot"></span><span id="status-title">You're calm today</span></h3>
-            <p>Your pact is active · <span class="num" id="rule-count"></span> rules</p>
+            <p>SpendSense is active · <span class="num" id="rule-count"></span> rules</p>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@
           <div class="icon">✅</div>
           <div>
             <h3>Nothing on hold</h3>
-            <p>Pact will let you know if anything needs a decision.</p>
+            <p>SpendSense will let you know if anything needs a decision.</p>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@
       <div class="span-2">
         <div class="section-title">Cooling off</div>
         <ul id="home-plans"></ul>
-        <div class="card empty-card" id="home-empty">Nothing cooling off. Planning a big purchase? Tell Pact in advance.</div>
+        <div class="card empty-card" id="home-empty">Nothing cooling off. Planning a big purchase? Tell SpendSense in advance.</div>
       </div>
 
       <div>
@@ -151,7 +151,7 @@
           <button class="row-btn" type="button" data-go="plan">＋ Plan a purchase <span class="chev">›</span></button>
           <button class="row-btn" id="statement-upload" type="button">📄 <span id="statement-label">Upload a statement</span> <span class="chev">›</span></button>
           <input id="statement-file" type="file" accept=".csv,text/csv" hidden />
-          <button class="row-btn" type="button" data-go="pact">✏️ View my pact <span class="chev">›</span></button>
+          <button class="row-btn" type="button" data-go="pact">✏️ View my rules <span class="chev">›</span></button>
         </div>
       </div>
     </section>
@@ -161,7 +161,7 @@
     <section class="view" id="view-statement">
       <div class="card">
         <h3>Is it a need or a want?</h3>
-        <p>Upload a bank statement (a CSV file from your bank). Pact labels every payment, and your pact uses this:
+        <p>Upload a bank statement (a CSV file from your bank). SpendSense labels every payment, and your rules use this:
           <strong>needs are never held</strong>, and wants are compared with what you usually spend. The file stays on this computer.</p>
         <div class="actions"><button id="statement-upload-page" type="button">📄 Upload a statement</button></div>
       </div>
@@ -181,7 +181,7 @@
           <iframe id="chart-frame" title="Your spending, from your statement" hidden></iframe>
           <div class="card" id="chart-offline" hidden>
             <h3>Your spending chart</h3>
-            <p>The chart needs the dev server: run <code>npm run dev</code> and open Pact at
+            <p>The chart needs the dev server: run <code>npm run dev</code> and open SpendSense at
               <strong>localhost:5173/index.html</strong>.</p>
           </div>
         </div>
@@ -206,7 +206,7 @@
     <section class="view grid-2" id="view-plan">
       <div class="card">
         <h3>Plan a big purchase</h3>
-        <p>Tell Pact in advance. After a short cooling-off period, it goes through without a hold.</p>
+        <p>Tell SpendSense in advance. After a short cooling-off period, it goes through without a hold.</p>
         <div class="tiers">
           <div class="tier"><strong class="num">24 hours</strong>under £100</div>
           <div class="tier"><strong class="num">48 hours</strong>£100 – £499</div>
@@ -344,7 +344,7 @@
       <div class="stack">
         <div class="card">
           <h3>Always allowed</h3>
-          <p>Groceries · pharmacy · transport · fuel · household bills. Pact never holds these.</p>
+          <p>Groceries · pharmacy · transport · fuel · household bills. SpendSense never holds these.</p>
         </div>
         <div class="card">
           <h3>Need to talk?</h3>
@@ -360,8 +360,8 @@
       <div class="stack">
         <div class="card try-card">
           <h3>Try a purchase</h3>
-          <p>Pretend to pay for something. Pact decides straight away, like it would at the till.
-            Upload a statement first (Needs &amp; wants) so Pact knows what's usual for you.</p>
+          <p>Pretend to pay for something. SpendSense decides straight away, like it would at the till.
+            Upload a statement first (Needs &amp; wants) so SpendSense knows what's usual for you.</p>
 
           <div class="section-title try-label">Quick examples: click one to pay</div>
           <div class="try-examples" id="try-examples"></div>
@@ -410,7 +410,7 @@
 
         <div class="card">
           <h3>Shop window</h3>
-          <p>Opens a pretend checkout. Put it next to Pact and pay: Pact decides live.</p>
+          <p>Opens a pretend checkout. Put it next to SpendSense and pay: SpendSense decides live.</p>
           <button type="button" id="open-shop" class="wide">🛍️ Open the shop window</button>
         </div>
 
@@ -419,7 +419,7 @@
       <div class="stack">
 
         <div class="card">
-          <h3>What Pact decided</h3>
+          <h3>What SpendSense decided</h3>
           <ul class="activity" id="activity"></ul>
           <p class="hint" id="activity-empty">No purchases yet.</p>
         </div>
@@ -436,7 +436,7 @@
   <!-- ================= HOLD SCREEN ================= -->
   <div class="overlay" id="hold-overlay" hidden>
     <div class="hold-screen">
-      <p class="hold-kicker">⏸️ Your Pact is holding</p>
+      <p class="hold-kicker">⏸️ SpendSense is holding</p>
       <div class="hold-amount num" id="hold-amount"></div>
       <p class="hold-shop" id="hold-shop"></p>
 
@@ -465,7 +465,7 @@
   <!-- Nudge: a quick "still want it?" check. One tap carries on, so it never blocks. -->
   <div class="overlay nudge-overlay" id="nudge-overlay" hidden>
     <div class="nudge-card" role="dialog" aria-labelledby="nudge-title">
-      <p class="nudge-kicker">💬 Quick check-in from your pact</p>
+      <p class="nudge-kicker">💬 Quick check-in from SpendSense</p>
       <h2 id="nudge-title"><span id="nudge-shop"></span> · <span class="num" id="nudge-amount"></span></h2>
       <p class="nudge-reason" id="nudge-reason"></p>
       <p class="nudge-message">"Hey, it's you. Is this what you really want right now?"</p>

@@ -106,7 +106,7 @@ function closeNudge(outcome) {
     toast("❌ Cancelled", `${money(tx.amount)} kept by changing your mind.`);
   } else {
     recordSpend(tx.shop, tx.amount, tx.date, { flagged: true });
-    toast(`✅ ${tx.shop} ${money(tx.amount)}: bought`, "Your choice. Your pact just checked in.");
+    toast(`✅ ${tx.shop} ${money(tx.amount)}: bought`, "Your choice. SpendSense just checked in.");
   }
   document.dispatchEvent(new CustomEvent("pact:nudge-done", { detail: { tx, outcome } }));
 }
