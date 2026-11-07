@@ -26,7 +26,7 @@ The code works through these steps in order, cheapest and most predictable first
 | Step | What | Example | confidence | source |
 |---|---|---|---|---|
 | 0 | Money in → **income** | `ACME LTD SALARY +2150` | 1.0 | `category` |
-| 1 | **Keyword rules** (`keywords.js`) | `TESCO STORES 3297` → need (groceries) | 0.9 | `keyword` |
+| 1 | **Keyword rules** (`website/js/classifier/keywords.js`) | `TESCO STORES 3297` → need (groceries) | 0.9 | `keyword` |
 | 2 | **Category rules**, if the parser gave a category | category `Groceries` → need | 0.75 | `category` |
 | 3 | Mixed shops / no match → **unsure** | `AMAZON`, `PAYPAL *XYZ123`, `UBER TRIP` | 0–0.3 | `keyword` |
 | 4 | **Gemini**, for the unsure ones only (optional) | `AMAZON` → want, "probably a gadget" | from AI | `ai` |
@@ -84,7 +84,8 @@ The same objects, unchanged, with these fields added:
 | `payday_burst` | £100+ of wants in payday + 3 days, **and** 2x+ usual | your average want spending over 4 days |
 
 Subscriptions and the gym are left out of the impulse checks: they're regular, not impulsive.
-Thresholds live in `SETTINGS` at the top of `impulse.js`.
+Thresholds live in `SETTINGS` at the top of `website/js/classifier/impulse.js`. Live purchases on the website
+are nudged a little earlier, at 2.5x usual (`NUDGE_MULTIPLE` in `website/js/statement.js`).
 
 ## Use it from other code
 
@@ -104,7 +105,7 @@ later if we want an offline, rules-only version.
 
 ## Add or fix a keyword
 
-Open `keywords.js` and add the shop name to the right list:
+Open `website/js/classifier/keywords.js` and add the shop name to the right list:
 
 ```js
 { label: "want", group: "fast food/takeaway", keywords: ["MCDONALDS", "KFC", ..., "WINGSTOP"] },
@@ -118,13 +119,17 @@ Open `keywords.js` and add the shop name to the right list:
 
 ## Files
 
+The rules are shared with the website, so they live in `website/js/classifier/` (the dev server only serves
+files inside `website/`). The Node-only parts stay here.
+
 | File | Job |
 |---|---|
-| `index.js` | the one file to import |
-| `csvLoader.js` | stand-in CSV loader (swap for the real parser later) |
-| `keywords.js` | keyword + category lists: **edit me** |
-| `classifier.js` | rules → unsure → optional AI |
-| `gemini.js` | the batched, private, crash-proof Gemini call |
-| `impulse.js` | the three impulse checks and their messages |
-| `run.js` | `npm run classify` summary |
-| `classifier.test.js` | tests |
+| `src/classifier/index.js` | the one file to import in Node; adds the optional Gemini step |
+| `src/classifier/gemini.js` | the batched, private, crash-proof Gemini call |
+| `src/classifier/run.js` | `npm run classify` summary |
+| `src/classifier/classifier.test.js` | tests |
+| `website/js/classifier/keywords.js` | keyword + category lists: **edit me** |
+| `website/js/classifier/classifier.js` | keyword rules → category rules → unsure |
+| `website/js/classifier/impulse.js` | the three impulse checks and their messages |
+| `website/js/classifier/csvLoader.js` | reads a statement CSV (Node and browser) |
+| `website/js/statement.js` | the website side: upload, Needs & wants page, `labelPurchase`, `compareToUsual` |

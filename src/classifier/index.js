@@ -6,12 +6,14 @@
 //   const classified   = await classifyTransactions(transactions);   // adds label/confidence/reason/source
 //   const flags        = detectImpulseSpending(classified);          // gentle impulse flags
 //
-// The website can't use this file (it has the AI key step). It loads keywords.js, classifier.js,
-// impulse.js and csvLoader.js directly and uses classifyByRules: same rules, no AI.
+// The shared rules live in website/js/classifier/ so the website can load them too
+// (from disk and with `npm run dev`). Node uses the very same files from there.
+// The website can't use this file (it has the AI key step): it uses classifyByRules, same rules, no AI.
 
-const { classifyByRules } = require("./classifier");
-const { detectImpulseSpending } = require("./impulse");
-const { loadStatementCsv, parseStatementCsv } = require("./csvLoader");
+const SHARED = "../../website/js/classifier/";
+const { classifyByRules } = require(SHARED + "classifier");
+const { detectImpulseSpending } = require(SHARED + "impulse");
+const { loadStatementCsv, parseStatementCsv } = require(SHARED + "csvLoader");
 const { askGeminiAboutUnsure } = require("./gemini");
 
 // MAIN FUNCTION. Give it an array of transactions, get the same transactions back

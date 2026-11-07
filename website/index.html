@@ -437,11 +437,12 @@
   <!-- Load order matters: core first, app last. Add your file between them. -->
   <script src="js/core.js"></script>
   <script src="js/plan.js"></script>
-  <!-- Need/want classifier: the same files `npm run classify` uses (no AI in the browser). -->
-  <script src="../src/classifier/keywords.js"></script>
-  <script src="../src/classifier/classifier.js"></script>
-  <script src="../src/classifier/impulse.js"></script>
-  <script src="../src/classifier/csvLoader.js"></script>
+  <!-- Need/want classifier: the same files `npm run classify` uses (no AI in the browser).
+       They live inside website/ so they load both from disk and with `npm run dev`. -->
+  <script src="js/classifier/keywords.js"></script>
+  <script src="js/classifier/classifier.js"></script>
+  <script src="js/classifier/impulse.js"></script>
+  <script src="js/classifier/csvLoader.js"></script>
   <script src="js/statement.js"></script>
   <script src="js/rules.js"></script>
   <script src="js/hold.js"></script>

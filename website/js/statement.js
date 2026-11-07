@@ -4,9 +4,9 @@
 // label every transaction need / want / unsure / income, learn what's "usual" for this person,
 // and flag spending that might be impulsive.
 //
-// All the logic is the SAME code as `npm run classify`: src/classifier/keywords.js,
+// All the logic is the SAME code as `npm run classify`: js/classifier/keywords.js,
 // classifier.js, impulse.js and csvLoader.js, loaded before this file in index.html.
-// To fix a shop that's labelled wrongly, edit src/classifier/keywords.js (one place for both).
+// To fix a shop that's labelled wrongly, edit website/js/classifier/keywords.js (one place for both).
 //
 // What other files can use:
 //   labelPurchase(tx)    → { type: "need" | "want" | "unsure", group, reason }   (rules.js)
