@@ -70,16 +70,20 @@ function usualSpend(group) {
   return null;
 }
 
-// Is this purchase much bigger than usual? Same thresholds as the statement check
-// (impulse.js SETTINGS: 3x usual and at least £30). Needs are never compared.
+// A live purchase this many times the user's usual gets a nudge ("Still want it?").
+// Lower than the 3x used for statement warnings (impulse.js), because a nudge is gentle:
+// one tap and it goes through. E.g. usual takeaway £30 → a £80 takeaway (2.7x) is nudged.
+const NUDGE_MULTIPLE = 2.5;
+
+// Is this purchase much bigger than usual? At least NUDGE_MULTIPLE x usual, and at least £30
+// (impulse.js SETTINGS.bigWantMinimum, so £9 vs £3 isn't flagged). Needs are never compared.
 function compareToUsual(tx) {
   const label = labelPurchase(tx);
   if (label.type === "need") return null;
   const usual = usualSpend(label.group);
   if (!usual || !(usual.amount > 0)) return null;
   const times = tx.amount / usual.amount;
-  const { bigWantMultiple, bigWantMinimum } = SpendSense.SETTINGS;
-  if (tx.amount < bigWantMinimum || times < bigWantMultiple) return null;
+  if (tx.amount < SpendSense.SETTINGS.bigWantMinimum || times < NUDGE_MULTIPLE) return null;
   return { times, usual: usual.amount, what: usual.what, fromStatement: usual.fromStatement };
 }
 

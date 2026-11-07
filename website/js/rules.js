@@ -18,7 +18,11 @@
 const ruleById = (id) => DEMO.rules.find((r) => r.id === id);
 
 // "That's 4× your usual takeaway (£18)." from compareToUsual() in statement.js.
-const usualText = (u) => (u ? `That's ${Math.round(u.times)}× your usual ${u.what} (${money(u.usual)}).` : "");
+const usualText = (u) => {
+  if (!u) return "";
+  const times = u.times < 10 ? u.times.toFixed(1).replace(/\.0$/, "") : Math.round(u.times); // 2.7×, 14×
+  return `That's ${times}× your usual ${u.what} (${money(Math.round(u.usual * 100) / 100)}).`;
+};
 
 function checkPurchase(tx) {
   const hour = new Date(tx.date).getHours();
