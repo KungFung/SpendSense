@@ -190,6 +190,33 @@ body.night .hold, body.night #hold-done { grid-column: span 2; }
 body.night button.secondary { color: #d9c2ef; border-color: #d9c2ef; }
 body.night input { background: #2e2040; color: #eee; border-color: #3d2c52; }
 
+/* ---------- Person 3: Social Mobility and Better Alternatives ---------- */
+#view-alternatives h2 { margin: 0 0 12px; font-size: 21px; }
+.alternatives-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+#view-alternatives select {
+  padding: 12px 14px; border: 1px solid #d6cde0; border-radius: 10px;
+  font: inherit; background: var(--card); color: var(--text); width: 100%;
+}
+#view-alternatives input[type="number"] { width: 100%; min-width: 0; }
+.alternatives-interests { margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.alternatives-interests legend { font-size: 14px; font-weight: 600; }
+.alternatives-interest-options { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 12px; }
+.alternatives-interest-options label { flex-direction: row; align-items: center; cursor: pointer; }
+.alternatives-interest-options input { accent-color: var(--purple-600); width: 18px; height: 18px; }
+.alternatives-results { display: grid; gap: 20px; }
+.alternatives-card h4 { margin: 14px 0 8px; font-size: 14px; }
+.alternatives-image { display: block; width: 100%; height: auto; border-radius: 10px; margin-bottom: 14px; }
+.alternatives-card .alternatives-notice { margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--purple-600); }
+.alternatives-reasons { list-style: disc; padding-left: 18px; gap: 6px; font-size: 14px; line-height: 1.45; }
+#alternatives-summary { min-height: 1.5em; }
+body.night #view-alternatives select { background: #2e2040; color: #eee; border-color: #3d2c52; }
+body.night .alternatives-card .alternatives-notice { color: #d9c2ef; }
+#view-alternatives :focus-visible { outline: 2px solid var(--purple-600); outline-offset: 3px; }
+body.night #view-alternatives :focus-visible { outline-color: #d9c2ef; }
+@media (max-width: 700px) {
+  .alternatives-fields { grid-template-columns: 1fr; }
+}
+
 /* ---------- Smaller screens ---------- */
 @media (max-width: 1000px) {
   body { grid-template-columns: 1fr; }
