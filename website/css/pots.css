@@ -1,0 +1,31 @@
+/* Scoped to the pots screen; uses Pact's shared colours, cards and buttons. */
+#view-pots h2 { margin: 0 0 10px; font-size: 21px; }
+#view-pots .pots-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+#view-pots .pots-summary > div { padding: 16px; border-radius: 12px; background: var(--purple-50); }
+#view-pots .pots-summary span { display: block; font-size: 14px; }
+#view-pots .pots-summary strong { display: block; font-size: 30px; margin-top: 6px; }
+#view-pots .pots-layout { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+#view-pots #pots-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+#view-pots select { padding: 12px 14px; border: 1px solid #d6cde0; border-radius: 10px; font: inherit; width: 100%; background: var(--card); color: var(--text); }
+#view-pots input { width: 100%; min-width: 0; }
+#view-pots .pots-icon { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: var(--purple-100); font-size: 24px; }
+#view-pots .pots-balance { margin: 16px 0 12px; font-size: 30px; color: var(--number); }
+#view-pots progress { display: block; width: 100%; height: 12px; accent-color: var(--purple-600); }
+#view-pots .pots-achieved { color: var(--green); font-weight: 600; }
+#view-pots .pots-error { color: #b3261e; }
+#view-pots .pots-error:empty { display: none; }
+#view-pots #pots-status { min-height: 1.5em; }
+#view-pots .actions { flex-wrap: wrap; }
+#view-pots :focus-visible { outline: 2px solid var(--purple-600); outline-offset: 3px; }
+body.night #view-pots .pots-summary > div, body.night #view-pots .pots-icon { background: #2e2040; }
+body.night #view-pots .pots-balance { color: #eee; }
+body.night #view-pots select { background: #2e2040; color: #eee; border-color: #3d2c52; }
+body.night #view-pots .pots-error { color: #f2a09a; }
+body.night #view-pots .pots-achieved { color: #8ddbb2; }
+body.night #view-pots :focus-visible { outline-color: #d9c2ef; }
+@media (max-width: 1150px) {
+  #view-pots .pots-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  #view-pots .pots-summary { grid-template-columns: 1fr; }
+}

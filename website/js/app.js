@@ -105,7 +105,7 @@ function renderRules() {
 // ---------- Navigation ----------
 const TITLES = {
   home: "Jordan", statement: "Needs & wants", plan: "Plan a purchase", pact: "My Pact",
-  demo: "Demo controls", alternatives: "Explore alternatives",
+  demo: "Demo controls", alternatives: "Explore alternatives", pots: "Savings pots",
 };
 
 function showTab(name) {
