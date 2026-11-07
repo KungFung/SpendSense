@@ -103,7 +103,7 @@ function renderRules() {
 }
 
 // ---------- Navigation ----------
-const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact", demo: "Demo controls" };
+const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact", demo: "Demo controls", alternatives: "Explore alternatives" };
 
 function showTab(name) {
   document.querySelectorAll(".nav [data-tab]").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
