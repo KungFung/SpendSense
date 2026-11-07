@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pact · Plan a purchase</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="phone">
+    <header>
+      <h1>Pact</h1>
+      <p class="tagline">A promise from you, to you.</p>
+    </header>
+
+    <section class="card">
+      <h2>Plan a big purchase</h2>
+      <p class="hint">Tell Pact in advance. After a short cooling-off period, it goes through without a hold.</p>
+
+      <form id="plan-form">
+        <label>
+          What do you want to buy?
+          <input id="item" type="text" placeholder="e.g. TV" required maxlength="40" />
+        </label>
+        <label>
+          Roughly how much? (£)
+          <input id="price" type="number" min="1" step="1" placeholder="450" required />
+        </label>
+        <p id="cooldown-preview" class="hint"></p>
+        <button type="submit">Start cooling-off</button>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="list-title">Your planned purchases</h2>
+      <ul id="plans"></ul>
+      <p id="empty" class="hint">Nothing planned yet.</p>
+    </section>
+
+    <section class="card kept">
+      <span>Kept by changing your mind</span>
+      <strong id="kept">£0</strong>
+    </section>
+
+    <footer>
+      <label class="demo">
+        <input id="demo-mode" type="checkbox" checked />
+        Demo speed (1 hour = 1 second)
+      </label>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
