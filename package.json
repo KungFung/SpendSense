@@ -1,0 +1,16 @@
+{
+  "name": "spendsense",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pact / SpendSense - need vs want classifier and impulse spending flags",
+  "scripts": {
+    "classify": "node src/classifier/run.js",
+    "test": "node --test \"src/classifier/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@google/genai": "^3.0.0"
+  }
+}
