@@ -3,168 +3,419 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pact · Plan a purchase</title>
+  <title>Pact</title>
   <style>
 :root {
-  --purple: #42145f;
-  --purple-light: #f3edf7;
+  --purple-900: #2a0c3f;
+  --purple-800: #42145f;
+  --purple-600: #5a287d;
+  --purple-100: #ece4f3;
+  --purple-50: #f6f2fa;
   --green: #1a7f4b;
+  --green-50: #e8f5ee;
+  --amber: #b25e00;
+  --amber-50: #fff4e5;
   --text: #1d1d1f;
   --muted: #6b6b76;
+  --card: #ffffff;
+  --line: #e7e1ee;
   --radius: 16px;
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 32px 16px;
-  background: #e9e4ee;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  background: var(--purple-50);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
 }
 
-.phone {
-  width: 100%;
-  max-width: 390px;
-  background: #fff;
-  border-radius: 36px;
-  padding: 28px 20px;
-  box-shadow: 0 20px 60px rgba(66, 20, 95, 0.18);
-}
-
-header h1 { margin: 0; color: var(--purple); font-size: 32px; }
-.tagline { margin: 2px 0 20px; color: var(--muted); }
-
-h2 { font-size: 18px; margin: 0 0 6px; }
-.list-title { margin: 24px 0 10px; }
-.hint { color: var(--muted); font-size: 14px; margin: 4px 0 12px; }
-
-.card {
-  background: var(--purple-light);
-  border-radius: var(--radius);
-  padding: 18px;
-}
-
-form { display: flex; flex-direction: column; gap: 12px; }
-label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
-
-input[type="text"],
-input[type="number"] {
-  padding: 12px;
-  border: 1px solid #d6cde0;
-  border-radius: 10px;
-  font-size: 16px;
-}
-
-button {
-  border: 0;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  background: var(--purple);
+/* ---------- Sidebar ---------- */
+.sidebar {
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column; gap: 24px;
+  padding: 28px 18px;
+  background: linear-gradient(180deg, var(--purple-800), var(--purple-900));
   color: #fff;
 }
-button.secondary { background: transparent; color: var(--purple); border: 1px solid var(--purple); }
-button.go { background: var(--green); }
-
-ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-
-.plan {
-  border: 1px solid #eee;
-  border-radius: var(--radius);
-  padding: 14px;
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; padding: 0 8px; }
+.brand-mark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, #fff, #cdb6e0);
+  display: grid; place-items: center; color: var(--purple-800); font-size: 16px; font-weight: 800;
 }
-.plan-top { display: flex; justify-content: space-between; font-weight: 600; }
-.plan-status { font-size: 14px; color: var(--muted); margin: 6px 0 10px; }
-.plan.ready { border-color: var(--green); }
-.plan.ready .plan-status { color: var(--green); font-weight: 600; }
-.plan.done { opacity: 0.55; }
+.brand small { display: block; font-size: 12px; font-weight: 400; opacity: 0.7; }
 
-.bar { height: 8px; background: #eee; border-radius: 999px; overflow: hidden; }
-.bar > div { height: 100%; background: var(--purple); transition: width 0.3s linear; }
-.plan.ready .bar > div { background: var(--green); }
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav button {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  background: none; color: rgba(255,255,255,0.75); text-align: left;
+  padding: 12px 14px; border-radius: 12px; font-size: 15px; font-weight: 600;
+}
+.nav button svg { width: 20px; height: 20px; flex-shrink: 0; }
+.nav button:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: #fff; }
+.nav button.active { background: rgba(255,255,255,0.14); color: #fff; }
+.nav button:disabled { opacity: 0.45; }
 
-.actions { display: flex; gap: 8px; margin-top: 12px; }
+.side-card { background: rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; font-size: 13px; line-height: 1.4; }
+.side-card strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.spacer { flex: 1; }
+
+.demo { background: rgba(0,0,0,0.25); border-radius: 14px; padding: 12px 14px; font-size: 13px; display: flex; flex-direction: column; gap: 8px; }
+.demo strong { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; opacity: 0.7; }
+.demo label { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
+.demo .link { color: #d9c2ef; font-size: 13px; }
+
+/* ---------- Main ---------- */
+.main { padding: 32px 40px 48px; max-width: 1240px; width: 100%; }
+.topbar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+.greeting { margin: 0 0 4px; color: var(--muted); font-size: 15px; }
+.page-title { margin: 0; font-size: 30px; font-weight: 700; }
+.clock { font-size: 14px; color: var(--muted); background: var(--card); padding: 8px 14px; border-radius: 999px; box-shadow: 0 1px 3px rgba(42,12,63,0.06); }
+
+.view { display: none; }
+.view.active { display: grid; gap: 20px; }
+
+.grid-home { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.grid-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(42, 12, 63, 0.06);
+}
+.card h3 { margin: 0; font-size: 16px; }
+.card p { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.card-head { display: flex; align-items: flex-start; gap: 12px; }
+.icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 20px; background: var(--purple-100);
+}
+.section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin: 0 0 10px; }
+
+/* Streak hero */
+.streak {
+  background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+  color: #fff; border-radius: var(--radius); padding: 24px 28px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.streak-main { display: flex; align-items: baseline; gap: 10px; }
+.streak-num { font-size: 56px; font-weight: 800; line-height: 1; }
+.streak-label { font-size: 20px; font-weight: 600; }
+.streak-sub { font-size: 14px; opacity: 0.85; margin-top: 10px; }
+.streak-bar { height: 10px; background: rgba(255,255,255,0.18); border-radius: 999px; margin-top: 16px; overflow: hidden; }
+.streak-bar > div { height: 100%; background: linear-gradient(90deg, #ffb36b, #ff6f91); border-radius: 999px; }
+.badges { display: flex; gap: 8px; margin-top: 16px; }
+.badge { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
+.badge.earned { background: #fff; color: var(--purple-800); }
+
+/* Wins */
+.wins { display: flex; flex-direction: column; gap: 20px; }
+.win { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.win strong { font-size: 32px; color: var(--green); }
+.win span { font-size: 14px; color: var(--muted); }
+
+.status .icon { background: var(--green-50); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--green); margin-right: 6px; }
+.risk.high { box-shadow: inset 4px 0 0 var(--amber), 0 1px 3px rgba(42,12,63,0.06); }
+.risk.high .icon { background: var(--amber-50); }
+.hold { outline: 1.5px solid var(--purple-600); }
+.hold .actions { margin-top: 14px; }
+
+.quick { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- Buttons & forms ---------- */
+button {
+  border: 0; border-radius: 999px; padding: 12px 18px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  background: var(--purple-800); color: #fff; font-family: inherit;
+}
+button.secondary { background: transparent; color: var(--purple-800); border: 1.5px solid var(--purple-800); }
+button.go { background: var(--green); }
+button.row-btn {
+  width: 100%; text-align: left; background: var(--card); color: var(--text);
+  border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(42, 12, 63, 0.06);
+  display: flex; justify-content: space-between; align-items: center;
+}
+button.row-btn:hover:not(:disabled) { outline: 1.5px solid var(--purple-100); }
+button.row-btn .chev { color: var(--purple-600); font-size: 20px; }
+button:disabled { opacity: 0.5; cursor: default; }
+.link { background: none; padding: 0; text-align: left; }
+
+.actions { display: flex; gap: 8px; }
 .actions button { flex: 1; padding: 10px; font-size: 14px; }
 
-.kept { margin-top: 24px; display: flex; justify-content: space-between; align-items: center; }
-.kept strong { font-size: 22px; color: var(--green); }
+form { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+input[type="text"], input[type="number"] {
+  padding: 12px 14px; border: 1px solid #d6cde0; border-radius: 10px; font-size: 16px; font-family: inherit;
+}
+.hint { color: var(--muted); font-size: 14px; margin: 0; }
+.tiers { display: flex; gap: 8px; margin-top: 14px; }
+.tier { flex: 1; background: var(--purple-50); border-radius: 10px; padding: 10px; font-size: 13px; color: var(--muted); }
+.tier strong { display: block; font-size: 15px; color: var(--text); }
 
-footer { margin-top: 20px; }
-.demo { flex-direction: row; align-items: center; font-weight: 400; color: var(--muted); }
+/* ---------- Planned purchases ---------- */
+ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.plan { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: 0 1px 3px rgba(42, 12, 63, 0.06); }
+.plan-top { display: flex; justify-content: space-between; font-weight: 600; }
+.plan-status { font-size: 14px; color: var(--muted); margin: 6px 0 10px; }
+.plan.ready { outline: 1.5px solid var(--green); }
+.plan.ready .plan-status { color: var(--green); font-weight: 600; }
+.plan.done { opacity: 0.55; }
+.bar { height: 8px; background: var(--purple-100); border-radius: 999px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--purple-600); transition: width 0.3s linear; }
+.plan.ready .bar > div { background: var(--green); }
+.plan .actions { margin-top: 12px; }
+.empty-card { color: var(--muted); font-size: 14px; }
+
+/* ---------- Rules ---------- */
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rule { display: flex; gap: 12px; align-items: flex-start; }
+.rule small { display: block; color: var(--muted); margin-top: 6px; font-size: 12px; }
+
+/* ---------- Night theme (after 11pm, or demo clock) ---------- */
+body.night { background: #140b1f; color: #eee; }
+body.night .sidebar { background: linear-gradient(180deg, #1e0d2e, #0d0614); }
+body.night .card, body.night .plan, body.night button.row-btn, body.night .clock { background: #21152f; color: #eee; }
+body.night .card p, body.night .hint, body.night .section-title, body.night .win span,
+body.night .greeting, body.night .clock, body.night .plan-status, body.night .rule small { color: #a99bb8; }
+body.night .streak { background: linear-gradient(135deg, #2e1546, #1e0d2e); }
+body.night .icon, body.night .tier { background: #2e2040; }
+body.night .tier strong { color: #eee; }
+body.night .risk { order: -1; grid-column: span 3; }
+body.night .hold, body.night #hold-done { grid-column: span 2; }
+body.night button.secondary { color: #d9c2ef; border-color: #d9c2ef; }
+body.night input { background: #2e2040; color: #eee; border-color: #3d2c52; }
+
+/* ---------- Smaller screens ---------- */
+@media (max-width: 1000px) {
+  body { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .main { padding: 24px 20px; }
+  .grid-home, .grid-2, .rules { grid-template-columns: 1fr; }
+  .span-2, .span-3, body.night .risk, body.night .hold, body.night #hold-done { grid-column: auto; }
+}
   </style>
 </head>
 <body>
-  <main class="phone">
-    <header>
-      <h1>Pact</h1>
-      <p class="tagline">A promise from you, to you.</p>
-    </header>
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div>Pact<small>A promise from you, to you.</small></div>
+    </div>
 
-    <section class="card">
-      <h2>Plan a big purchase</h2>
-      <p class="hint">Tell Pact in advance. After a short cooling-off period, it goes through without a hold.</p>
+    <nav class="nav">
+      <button class="active" type="button" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>
+        Home
+      </button>
+      <button type="button" data-tab="plan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+        Plan a purchase
+      </button>
+      <button type="button" data-tab="pact">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        My Pact
+      </button>
+      <button type="button" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>
+        Statements (soon)
+      </button>
+    </nav>
 
-      <form id="plan-form">
-        <label>
-          What do you want to buy?
-          <input id="item" type="text" placeholder="e.g. TV" required maxlength="40" />
-        </label>
-        <label>
-          Roughly how much? (£)
-          <input id="price" type="number" min="1" step="1" placeholder="450" required />
-        </label>
-        <p id="cooldown-preview" class="hint"></p>
-        <button type="submit">Start cooling-off</button>
-      </form>
+    <div class="side-card">
+      <strong>💜 Sam is your trusted person</strong>
+      Sam only gets check-in signals, never amounts or shops.
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="demo">
+      <strong>Demo controls</strong>
+      <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1h = 1s)</label>
+      <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
+      <button class="link" id="demo-reset" type="button">Reset demo</button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <p class="greeting" id="greeting"></p>
+        <h1 class="page-title" id="page-title">Jordan</h1>
+      </div>
+      <div class="clock" id="clock"></div>
+    </div>
+
+    <!-- ---------- HOME ---------- -->
+    <section class="view grid-home active" id="view-home">
+      <div class="streak span-2">
+        <div>
+          <div class="streak-main">
+            <span class="streak-num">🔥 <span id="streak-days"></span></span>
+            <span class="streak-label">day streak</span>
+          </div>
+          <div class="streak-sub" id="streak-sub"></div>
+        </div>
+        <div>
+          <div class="streak-bar"><div id="streak-progress"></div></div>
+          <div class="badges" id="badges"></div>
+        </div>
+      </div>
+
+      <div class="wins">
+        <div class="card win"><strong id="protected"></strong><span>protected by your pact this month</span></div>
+        <div class="card win"><strong id="kept-home"></strong><span>kept by changing your mind</span></div>
+      </div>
+
+      <div class="card status">
+        <div class="card-head">
+          <div class="icon">🛡️</div>
+          <div>
+            <h3><span class="dot"></span><span id="status-title">You're calm today</span></h3>
+            <p>Your pact is active · 4 rules</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card risk" id="risk-card">
+        <div class="card-head">
+          <div class="icon">🌙</div>
+          <div>
+            <h3 id="risk-title"></h3>
+            <p id="risk-text"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hold" id="hold-card">
+        <div class="card-head">
+          <div class="icon">⏸️</div>
+          <div>
+            <h3>1 purchase on hold</h3>
+            <p>Klarna × ASOS · £340 · decide in 14h<br />Rule: "Over £50 after midnight"</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="secondary" id="hold-plan" type="button">Plan it instead</button>
+          <button id="hold-cancel" type="button">Cancel it</button>
+        </div>
+      </div>
+      <div class="card" id="hold-done" hidden>
+        <div class="card-head">
+          <div class="icon">✅</div>
+          <div>
+            <h3>Nothing on hold</h3>
+            <p>Pact will let you know if anything needs a decision.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="span-2">
+        <div class="section-title">Cooling off</div>
+        <ul id="home-plans"></ul>
+        <div class="card empty-card" id="home-empty">Nothing cooling off. Planning a big purchase? Tell Pact in advance.</div>
+      </div>
+
+      <div>
+        <div class="section-title">Quick actions</div>
+        <div class="quick">
+          <button class="row-btn" type="button" data-go="plan">＋ Plan a purchase <span class="chev">›</span></button>
+          <button class="row-btn" type="button" disabled>📄 Upload a statement (soon) <span class="chev">›</span></button>
+          <button class="row-btn" type="button" data-go="pact">✏️ View my pact <span class="chev">›</span></button>
+        </div>
+      </div>
     </section>
 
-    <section>
-      <h2 class="list-title">Your planned purchases</h2>
-      <ul id="plans"></ul>
-      <p id="empty" class="hint">Nothing planned yet.</p>
+    <!-- ---------- PLAN ---------- -->
+    <section class="view grid-2" id="view-plan">
+      <div class="card">
+        <h3>Plan a big purchase</h3>
+        <p>Tell Pact in advance. After a short cooling-off period, it goes through without a hold.</p>
+        <div class="tiers">
+          <div class="tier"><strong>24 hours</strong>under £100</div>
+          <div class="tier"><strong>48 hours</strong>£100 – £499</div>
+          <div class="tier"><strong>72 hours</strong>£500 and over</div>
+        </div>
+        <form id="plan-form">
+          <label>
+            What do you want to buy?
+            <input id="item" type="text" placeholder="e.g. TV" required maxlength="40" />
+          </label>
+          <label>
+            Roughly how much? (£)
+            <input id="price" type="number" min="1" step="1" placeholder="450" required />
+          </label>
+          <p id="cooldown-preview" class="hint"></p>
+          <button type="submit">Start cooling-off</button>
+        </form>
+      </div>
+
+      <div>
+        <div class="section-title">Your planned purchases</div>
+        <ul id="plans"></ul>
+        <div class="card empty-card" id="empty">Nothing planned yet.</div>
+      </div>
     </section>
 
-    <section class="card kept">
-      <span>Kept by changing your mind</span>
-      <strong id="kept">£0</strong>
-    </section>
+    <!-- ---------- MY PACT ---------- -->
+    <section class="view grid-2" id="view-pact">
+      <div class="stack">
+        <div class="card">
+          <h3>Your rules</h3>
+          <p>You set these on 3 Oct. Tightening is instant; loosening takes 48 hours.</p>
+        </div>
+        <ul id="rules" class="stack"></ul>
+      </div>
 
-    <footer>
-      <label class="demo">
-        <input id="demo-mode" type="checkbox" checked />
-        Demo speed (1 hour = 1 second)
-      </label>
-    </footer>
+      <div class="stack">
+        <div class="card">
+          <h3>Always allowed</h3>
+          <p>Groceries · pharmacy · transport · fuel · household bills. Pact never holds these.</p>
+        </div>
+        <div class="card">
+          <h3>Need to talk?</h3>
+          <p><strong>Samaritans</strong>: 116 123 (free, 24/7)</p>
+          <p><strong>National Gambling Helpline</strong>: 0808 8020 133</p>
+          <p><strong>StepChange</strong>: free debt advice</p>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script>
-// Pact — planned purchases with a cooling-off period.
+// Pact — dashboard + planned purchases with a cooling-off period.
 // Everything is stored in the browser (localStorage); no backend yet.
 
-const STORAGE_KEY = "pact.plans";
-const KEPT_KEY = "pact.kept";
 const HOUR_MS = 60 * 60 * 1000;
 const READY_WINDOW_DAYS = 7;
+const MILESTONES = [3, 7, 14, 30, 60, 100];
 
-// Bigger purchase → longer cooling-off (see PROJECT.md, section 2.3).
-function cooldownHours(price) {
-  if (price >= 500) return 72;
-  if (price >= 100) return 48;
-  return 24;
-}
-
-// In demo mode, 1 hour of cooling-off passes in 1 second.
-function hourLength() {
-  return document.getElementById("demo-mode").checked ? 1000 : HOUR_MS;
-}
+// Demo data until the streak tracker and rules engine exist (see PROJECT.md).
+const DEMO = {
+  streakDays: 12,
+  onTrackLast30: 26,
+  protectedThisMonth: 610,
+  hold: { item: "Klarna × ASOS", price: 340 },
+  rules: [
+    { icon: "🌙", text: "Hold purchases over £50 between midnight and 6am", action: "Hold 24h" },
+    { icon: "🛍️", text: "Hold a 3rd buy-now-pay-later plan in the same week", action: "Hold 24h" },
+    { icon: "🍔", text: "Nudge me after 3 takeaways in a week", action: "Nudge" },
+    { icon: "🏠", text: "Never let my balance fall below £650 (rent money)", action: "Hold" },
+  ],
+};
 
 // Some viewers block localStorage; fall back to in-memory state so the page still works.
 function load(key, fallback) {
@@ -174,10 +425,47 @@ function save(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
-let plans = load(STORAGE_KEY, []);
-let kept = load(KEPT_KEY, 0);
+let plans = load("pact.plans", []);
+let kept = load("pact.kept", 0);
+let holdStatus = load("pact.hold", "held"); // held | planned | cancelled
 
+const $ = (id) => document.getElementById(id);
 const money = (n) => "£" + Number(n).toLocaleString("en-GB");
+
+// ---------- Cooling-off rules (PROJECT.md, section 2.3) ----------
+function cooldownHours(price) {
+  if (price >= 500) return 72;
+  if (price >= 100) return 48;
+  return 24;
+}
+
+function hourLength() {
+  return $("demo-mode").checked ? 1000 : HOUR_MS;
+}
+
+function addPlan(item, price) {
+  const now = Date.now();
+  const hourMs = hourLength();
+  const readyAt = now + cooldownHours(price) * hourMs;
+  plans.unshift({
+    id: now.toString(36) + Math.random().toString(36).slice(2),
+    item,
+    price,
+    createdAt: now,
+    readyAt,
+    expiresAt: readyAt + READY_WINDOW_DAYS * 24 * hourMs,
+    hourMs,
+    status: "cooling",
+  });
+  save("pact.plans", plans);
+}
+
+function statusOf(plan, now) {
+  if (plan.status !== "cooling") return plan.status;
+  if (now >= plan.expiresAt) return "expired";
+  if (now >= plan.readyAt) return "ready";
+  return "cooling";
+}
 
 function formatRemaining(ms, hourMs) {
   const hours = Math.ceil(ms / hourMs);
@@ -189,71 +477,16 @@ function formatRemaining(ms, hourMs) {
   return `${hours}h left`;
 }
 
-function statusOf(plan, now) {
-  if (plan.status !== "cooling") return plan.status;
-  if (now >= plan.expiresAt) return "expired";
-  if (now >= plan.readyAt) return "ready";
-  return "cooling";
-}
-
-function render() {
-  const now = Date.now();
-  const list = document.getElementById("plans");
-  list.replaceChildren();
-  document.getElementById("empty").hidden = plans.length > 0;
-  document.getElementById("kept").textContent = money(kept);
-
-  for (const plan of plans) {
-    const status = statusOf(plan, now);
-    const total = plan.readyAt - plan.createdAt;
-    const progress = Math.min(1, (now - plan.createdAt) / total);
-
-    const li = document.createElement("li");
-    li.className = "plan " + (status === "ready" ? "ready" : status === "cooling" ? "" : "done");
-
-    const top = document.createElement("div");
-    top.className = "plan-top";
-    const name = document.createElement("span");
-    name.textContent = plan.item;
-    const price = document.createElement("span");
-    price.textContent = money(plan.price);
-    top.append(name, price);
-
-    const text = document.createElement("div");
-    text.className = "plan-status";
-    if (status === "cooling") {
-      const halfway = progress >= 0.5 ? "Halfway there. Still want it? " : "Cooling off · ";
-      text.textContent = halfway + formatRemaining(plan.readyAt - now, plan.hourMs);
-    } else if (status === "ready") {
-      text.textContent = `✅ Ready. You can buy it without a hold for ${READY_WINDOW_DAYS} days.`;
-    } else if (status === "bought") {
-      text.textContent = "Bought, planned not impulsive 👏";
-    } else if (status === "cancelled") {
-      text.textContent = "You changed your mind. Money kept.";
-    } else {
-      text.textContent = "Plan expired. Plan it again if you still want it.";
-    }
-
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    const fill = document.createElement("div");
-    fill.style.width = (status === "cooling" || status === "ready" ? progress * 100 : 100) + "%";
-    bar.append(fill);
-
-    li.append(top, text, bar);
-
-    if (status === "cooling" || status === "ready") {
-      const actions = document.createElement("div");
-      actions.className = "actions";
-      if (status === "ready") {
-        actions.append(button("Buy it", "go", () => finish(plan.id, "bought")));
-      }
-      actions.append(button("I don't want it anymore", "secondary", () => finish(plan.id, "cancelled")));
-      li.append(actions);
-    }
-
-    list.append(li);
+function finish(id, status) {
+  const plan = plans.find((p) => p.id === id);
+  if (!plan) return;
+  plan.status = status;
+  if (status === "cancelled") {
+    kept += plan.price;
+    save("pact.kept", kept);
   }
+  save("pact.plans", plans);
+  render();
 }
 
 function button(label, className, onClick) {
@@ -265,55 +498,209 @@ function button(label, className, onClick) {
   return b;
 }
 
-function finish(id, status) {
-  const plan = plans.find((p) => p.id === id);
-  if (!plan) return;
-  plan.status = status;
-  if (status === "cancelled") {
-    kept += plan.price;
-    save(KEPT_KEY, kept);
+function planItem(plan, now) {
+  const status = statusOf(plan, now);
+  const progress = Math.min(1, (now - plan.createdAt) / (plan.readyAt - plan.createdAt));
+
+  const li = document.createElement("li");
+  li.className = "plan " + (status === "ready" ? "ready" : status === "cooling" ? "" : "done");
+
+  const top = document.createElement("div");
+  top.className = "plan-top";
+  const name = document.createElement("span");
+  name.textContent = plan.item;
+  const price = document.createElement("span");
+  price.textContent = money(plan.price);
+  top.append(name, price);
+
+  const text = document.createElement("div");
+  text.className = "plan-status";
+  if (status === "cooling") {
+    const prefix = progress >= 0.5 ? "Halfway there. Still want it? " : "Cooling off · ";
+    text.textContent = prefix + formatRemaining(plan.readyAt - now, plan.hourMs);
+  } else if (status === "ready") {
+    text.textContent = `✅ Ready. You can buy it without a hold for ${READY_WINDOW_DAYS} days.`;
+  } else if (status === "bought") {
+    text.textContent = "Bought, planned not impulsive 👏";
+  } else if (status === "cancelled") {
+    text.textContent = "You changed your mind. Money kept.";
+  } else {
+    text.textContent = "Plan expired. Plan it again if you still want it.";
   }
-  save(STORAGE_KEY, plans);
-  render();
+
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  const fill = document.createElement("div");
+  fill.style.width = (status === "cooling" || status === "ready" ? progress * 100 : 100) + "%";
+  bar.append(fill);
+
+  li.append(top, text, bar);
+
+  if (status === "cooling" || status === "ready") {
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    if (status === "ready") actions.append(button("Buy it", "go", () => finish(plan.id, "bought")));
+    actions.append(button("I don't want it anymore", "secondary", () => finish(plan.id, "cancelled")));
+    li.append(actions);
+  }
+  return li;
 }
 
-function updatePreview() {
-  const price = Number(document.getElementById("price").value);
-  document.getElementById("cooldown-preview").textContent = price > 0
-    ? `Cooling-off period: ${cooldownHours(price)} hours`
-    : "";
+// ---------- Clock, greeting and risk forecast ----------
+function demoNow() {
+  if (!$("demo-night").checked) return new Date();
+  const d = new Date();
+  d.setHours(1, 47, 0, 0);
+  return d;
 }
 
-document.getElementById("price").addEventListener("input", updatePreview);
+function renderClock() {
+  const now = demoNow();
+  const h = now.getHours();
+  const night = h >= 23 || h < 6;
+  document.body.classList.toggle("night", night);
 
-document.getElementById("plan-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const item = document.getElementById("item").value.trim();
-  const price = Number(document.getElementById("price").value);
-  if (!item || !(price > 0)) return;
-
-  const now = Date.now();
-  const hourMs = hourLength();
-  const readyAt = now + cooldownHours(price) * hourMs;
-  plans.unshift({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-    item,
-    price,
-    createdAt: now,
-    readyAt,
-    expiresAt: readyAt + READY_WINDOW_DAYS * 24 * hourMs,
-    hourMs,
-    status: "cooling",
+  $("clock").textContent = now.toLocaleString("en-GB", {
+    weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
   });
-  save(STORAGE_KEY, plans);
+  $("status-title").textContent = night ? "Your pact is on watch" : "You're calm today";
+  $("greeting").textContent =
+    night ? "Still up?" : h < 12 ? "Good morning," : h < 18 ? "Good afternoon," : "Good evening,";
 
+  // Jordan's riskiest window, learned from their history: payday Fridays, 11pm–3am.
+  const friday = now.getDay() === 5;
+  const risk = $("risk-card");
+  if (night) {
+    risk.className = "card risk high";
+    $("risk-title").textContent = "You're in a high-risk window";
+    $("risk-text").textContent = "This is usually when impulse buys happen for you. Your late-night rule is on.";
+  } else if (friday && h >= 18) {
+    risk.className = "card risk high";
+    $("risk-title").textContent = "Tonight is a high-risk window";
+    $("risk-text").textContent = "Payday Friday, 11pm–3am. Your late-night rule switches on at midnight.";
+  } else {
+    risk.className = "card risk";
+    $("risk-title").textContent = "Tonight looks calm";
+    $("risk-text").textContent = "Your riskiest time is payday Fridays, 11pm–3am. Pact will remind you.";
+  }
+}
+
+// ---------- Streak ----------
+function renderStreak() {
+  const days = DEMO.streakDays;
+  const next = MILESTONES.find((m) => m > days) ?? days;
+  const prev = [...MILESTONES].reverse().find((m) => m <= days) ?? 0;
+  $("streak-days").textContent = days;
+  $("streak-progress").style.width = ((days - prev) / (next - prev)) * 100 + "%";
+  $("streak-sub").textContent =
+    `${next - days} days to your ${next}-day badge · ${DEMO.onTrackLast30} of the last 30 days on track`;
+
+  $("badges").replaceChildren(...MILESTONES.map((m) => {
+    const b = document.createElement("span");
+    b.className = "badge" + (days >= m ? " earned" : "");
+    b.textContent = m + " days";
+    return b;
+  }));
+}
+
+// ---------- Render ----------
+function render() {
+  const now = Date.now();
+
+  const active = plans.filter((p) => ["cooling", "ready"].includes(statusOf(p, now)));
+  $("home-plans").replaceChildren(...active.slice(0, 4).map((p) => planItem(p, now)));
+  $("home-empty").hidden = active.length > 0;
+
+  $("plans").replaceChildren(...plans.map((p) => planItem(p, now)));
+  $("empty").hidden = plans.length > 0;
+
+  $("hold-card").hidden = holdStatus !== "held";
+  $("hold-done").hidden = holdStatus === "held";
+  $("protected").textContent = money(DEMO.protectedThisMonth);
+  $("kept-home").textContent = money(kept);
+}
+
+function renderRules() {
+  $("rules").replaceChildren(...DEMO.rules.map((r) => {
+    const li = document.createElement("li");
+    li.className = "card rule";
+    const icon = document.createElement("div");
+    icon.className = "icon";
+    icon.textContent = r.icon;
+    const body = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = r.text;
+    const meta = document.createElement("small");
+    meta.textContent = r.action + " · set 3 Oct";
+    body.append(title, meta);
+    li.append(icon, body);
+    return li;
+  }));
+}
+
+// ---------- Navigation ----------
+const TITLES = { home: "Jordan", plan: "Plan a purchase", pact: "My Pact" };
+
+function showTab(name) {
+  document.querySelectorAll(".nav [data-tab]").forEach((t) => t.classList.toggle("active", t.dataset.tab === name));
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + name));
+  $("greeting").hidden = name !== "home";
+  $("page-title").textContent = TITLES[name];
+}
+
+document.querySelectorAll(".nav [data-tab]").forEach((t) => t.addEventListener("click", () => showTab(t.dataset.tab)));
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.go)));
+
+// ---------- Events ----------
+$("price").addEventListener("input", () => {
+  const price = Number($("price").value);
+  $("cooldown-preview").textContent = price > 0 ? `Cooling-off period: ${cooldownHours(price)} hours` : "";
+});
+
+$("plan-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const item = $("item").value.trim();
+  const price = Number($("price").value);
+  if (!item || !(price > 0)) return;
+  addPlan(item, price);
   e.target.reset();
-  updatePreview();
+  $("cooldown-preview").textContent = "";
   render();
 });
 
+$("hold-plan").addEventListener("click", () => {
+  addPlan(DEMO.hold.item, DEMO.hold.price);
+  holdStatus = "planned";
+  save("pact.hold", holdStatus);
+  render();
+});
+
+$("hold-cancel").addEventListener("click", () => {
+  kept += DEMO.hold.price;
+  holdStatus = "cancelled";
+  save("pact.kept", kept);
+  save("pact.hold", holdStatus);
+  render();
+});
+
+$("demo-night").addEventListener("change", renderClock);
+
+$("demo-reset").addEventListener("click", () => {
+  plans = [];
+  kept = 0;
+  holdStatus = "held";
+  save("pact.plans", plans);
+  save("pact.kept", kept);
+  save("pact.hold", holdStatus);
+  render();
+});
+
+renderStreak();
+renderRules();
+renderClock();
 render();
 setInterval(render, 250);
+setInterval(renderClock, 30000);
   </script>
 </body>
 </html>
