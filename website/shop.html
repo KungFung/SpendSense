@@ -130,7 +130,7 @@ function onResult(data) {
   if (data.action === "hold") {
     showResult("hold", "⏸️ Payment paused by your bank", "Your Pact is holding this payment. Open the app to decide.");
   } else if (data.action === "nudge") {
-    showResult("nudge", "✅ Payment approved", "Order placed. (Your Pact sent you a nudge.)");
+    showResult("nudge", "💬 Check your Pact app", "Quick question before this goes through: still want it?");
   } else {
     showResult("allow", "✅ Payment approved", "Thanks for your order!");
   }

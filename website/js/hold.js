@@ -78,3 +78,36 @@ $("hold-emergency").addEventListener("click", () => {
   closeHold();
   toast("🚨 Released", `${money(hold.amount)} at ${hold.shop} went through. This is logged.`);
 });
+
+// ---------- Nudge: "Still want it?" ----------
+// Softer than a hold: no waiting. One tap and it goes through, so the user stays in charge,
+// but they stop for a second first. Cancelling counts as money kept.
+let activeNudge = null;
+
+function showNudge(tx, reason) {
+  activeNudge = tx;
+  $("nudge-shop").textContent = tx.shop;
+  $("nudge-amount").textContent = money(tx.amount);
+  $("nudge-reason").textContent = reason || "";
+  $("nudge-overlay").hidden = false;
+  $("nudge-buy").focus();
+}
+
+function closeNudge(outcome) {
+  const tx = activeNudge;
+  $("nudge-overlay").hidden = true;
+  activeNudge = null;
+  if (!tx) return;
+  if (outcome === "cancel") {
+    kept += tx.amount;
+    save("pact.kept", kept);
+    render();
+    toast("❌ Cancelled", `${money(tx.amount)} kept by changing your mind.`);
+  } else {
+    toast(`✅ ${tx.shop} ${money(tx.amount)}: bought`, "Your choice. Your pact just checked in.");
+  }
+  document.dispatchEvent(new CustomEvent("pact:nudge-done", { detail: { tx, outcome } }));
+}
+
+$("nudge-buy").addEventListener("click", () => closeNudge("buy"));
+$("nudge-cancel").addEventListener("click", () => closeNudge("cancel"));

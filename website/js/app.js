@@ -158,7 +158,7 @@ function handlePurchase(purchase) {
     renderHolds();
     showHold(hold);
   } else if (decision.action === "nudge") {
-    toast(`💬 ${label}: nudge`, `${decision.reason} It went through; your pact just checked in.`);
+    showNudge(tx, decision.reason);
   } else {
     if (decision.plan) finish(decision.plan.id, "bought");
     toast(`✅ ${label}: approved`, decision.reason);
@@ -258,32 +258,83 @@ $("presets").replaceChildren(...DEMO.purchases.map((p) =>
 $("custom-category").replaceChildren(...Object.entries(DEMO.categories).map(([name, type]) => {
   const option = document.createElement("option");
   option.value = name;
-  option.textContent = `${name[0].toUpperCase()}${name.slice(1)} (${type})`;
+  option.textContent = name[0].toUpperCase() + name.slice(1);
   return option;
 }));
 $("custom-category").value = "clothes";
 
+// Live "Pact thinks..." line, from our need/want classifier (statement.js).
+// The shop name decides first (Tesco = need); the category is used for shops Pact doesn't know.
 function showCustomType() {
-  const type = DEMO.categories[$("custom-category").value];
-  $("custom-type").textContent = type === "need"
-    ? "This is a need: Pact will always let it through."
-    : "This is a want: Pact will check it against your rules.";
+  const shop = $("custom-shop").value.trim();
+  if (!shop) {
+    $("custom-type").textContent = "Type a shop and Pact will tell you if it's a need or a want.";
+    $("custom-type").className = "try-guess";
+    return;
+  }
+  const label = labelPurchase({ shop, amount: Number($("custom-amount").value) || 1, category: $("custom-category").value });
+  const kind = label.group ? ` (${label.group})` : "";
+  $("custom-type").className = "try-guess " + label.type;
+  $("custom-type").textContent = label.type === "need"
+    ? `Pact thinks: NEED${kind}. Needs are always let through.`
+    : label.type === "want"
+      ? `Pact thinks: WANT${kind}. Pact checks it against your rules and your usual spending.`
+      : `Pact thinks: NOT SURE${kind}. Treated as a want to be safe.`;
 }
-$("custom-category").addEventListener("change", showCustomType);
+["custom-shop", "custom-amount", "custom-category"].forEach((id) => $(id).addEventListener("input", showCustomType));
 showCustomType();
+
+// Show Pact's answer right under the form.
+const RESULT_TEXT = {
+  allow: ["✅ Approved", "It went through."],
+  nudge: ["💬 Nudge: Pact asked \"Still want it?\"", "Answer in the pop-up."],
+  hold: ["⏸️ Held", "Pact paused it. Decide on the hold screen."],
+};
+function showTryResult(action, reason) {
+  const [title, fallback] = RESULT_TEXT[action];
+  $("try-result").className = "try-result " + action;
+  $("try-result-title").textContent = title;
+  $("try-result-text").textContent = reason || fallback;
+  $("try-result").hidden = false;
+}
+document.addEventListener("pact:nudge-done", (e) => {
+  if ($("try-result").hidden) return;
+  $("try-result-title").textContent = e.detail.outcome === "cancel" ? "❌ You cancelled it" : "✅ You chose to buy it";
+});
+
+function payCustom(purchase) {
+  const result = handlePurchase({ id: "custom", ...purchase });
+  showTryResult(result.action, result.reason);
+}
+
+// One-click examples. Results depend on the uploaded statement.
+const TRY_EXAMPLES = [
+  { text: "🛒 Tesco £40 at 2am", shop: "Tesco", amount: 40, category: "groceries", time: "02:00" },
+  { text: "🍔 Deliveroo £100", shop: "Deliveroo", amount: 100, category: "takeaway", time: "20:00" },
+  { text: "👟 JD Sports £120", shop: "JD Sports", amount: 120, category: "clothes", time: "15:00" },
+  { text: "🛍️ ASOS £90 at 1:30am", shop: "ASOS", amount: 90, category: "clothes", time: "01:30" },
+  { text: "📺 Currys £300", shop: "Currys", amount: 300, category: "electronics", time: "14:00" },
+];
+$("try-examples").replaceChildren(...TRY_EXAMPLES.map(({ text, ...purchase }) =>
+  button(text, "preset", () => {
+    $("custom-shop").value = purchase.shop;
+    $("custom-amount").value = purchase.amount;
+    $("custom-category").value = purchase.category;
+    $("custom-time").value = purchase.time;
+    $("custom-bnpl").checked = false;
+    showCustomType();
+    payCustom(purchase);
+  })));
 
 $("custom-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const shop = $("custom-shop").value.trim();
   const amount = Number($("custom-amount").value);
   if (!shop || !(amount > 0)) return;
-  const category = $("custom-category").value;
-  handlePurchase({
-    id: "custom",
+  payCustom({
     shop,
     amount,
-    category,
-    type: DEMO.categories[category],
+    category: $("custom-category").value,
     bnpl: $("custom-bnpl").checked,
     ...($("custom-time").value ? { time: $("custom-time").value } : {}),
   });

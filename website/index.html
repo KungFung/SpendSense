@@ -240,24 +240,15 @@
     <!-- ---------- DEMO ---------- -->
     <section class="view grid-2" id="view-demo">
       <div class="stack">
-        <div class="card">
-          <h3>Clock and speed</h3>
-          <p>Switch to 1:47am to show the night mode and the late-night rule.</p>
-          <div class="toggles">
-            <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
-            <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1 hour = 1 second)</label>
-          </div>
-        </div>
+        <div class="card try-card">
+          <h3>Try a purchase</h3>
+          <p>Pretend to pay for something. Pact decides straight away, like it would at the till.
+            Upload a statement first (Needs &amp; wants) so Pact knows what's usual for you.</p>
 
-        <div class="card">
-          <h3>Shop window</h3>
-          <p>Opens a pretend checkout. Put it next to Pact and pay: Pact decides live.</p>
-          <button type="button" id="open-shop" class="wide">🛍️ Open the shop window</button>
-        </div>
+          <div class="section-title try-label">Quick examples: click one to pay</div>
+          <div class="try-examples" id="try-examples"></div>
 
-        <div class="card">
-          <h3>Custom purchase</h3>
-          <p>Make up any purchase and see what Pact does with it.</p>
+          <div class="section-title try-label">Or make your own</div>
           <form id="custom-form">
             <div class="form-row">
               <label>
@@ -277,14 +268,34 @@
               <label>
                 Time
                 <input id="custom-time" type="time" />
-                <small class="hint">Leave empty to use Pact's clock</small>
+                <small class="hint">Empty = now</small>
               </label>
             </div>
-            <label class="inline"><input id="custom-bnpl" type="checkbox" /> Paid with buy now, pay later</label>
-            <p class="hint" id="custom-type"></p>
-            <button type="submit">Make purchase</button>
+            <label class="inline"><input id="custom-bnpl" type="checkbox" /> Paid with buy now, pay later (Klarna etc.)</label>
+            <p class="try-guess" id="custom-type"></p>
+            <button type="submit" class="wide">Pay</button>
           </form>
+
+          <div class="try-result" id="try-result" hidden>
+            <strong id="try-result-title"></strong>
+            <p id="try-result-text"></p>
+          </div>
         </div>
+        <div class="card">
+          <h3>Clock and speed</h3>
+          <p>Switch to 1:47am to show the night mode and the late-night rule.</p>
+          <div class="toggles">
+            <label><input id="demo-night" type="checkbox" /> Set clock to 1:47am</label>
+            <label><input id="demo-mode" type="checkbox" checked /> Fast cooling-off (1 hour = 1 second)</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Shop window</h3>
+          <p>Opens a pretend checkout. Put it next to Pact and pay: Pact decides live.</p>
+          <button type="button" id="open-shop" class="wide">🛍️ Open the shop window</button>
+        </div>
+
       </div>
 
       <div class="stack">
@@ -335,6 +346,19 @@
       <div class="hold-secondary">
         <button class="link" id="hold-sam" type="button">💬 Message Sam</button>
         <button class="link" id="hold-emergency" type="button">🚨 This is an emergency</button>
+      </div>
+    </div>
+  </div>
+  <!-- Nudge: a quick "still want it?" check. One tap carries on, so it never blocks. -->
+  <div class="overlay nudge-overlay" id="nudge-overlay" hidden>
+    <div class="nudge-card" role="dialog" aria-labelledby="nudge-title">
+      <p class="nudge-kicker">💬 Quick check-in from your pact</p>
+      <h2 id="nudge-title"><span id="nudge-shop"></span> · <span class="num" id="nudge-amount"></span></h2>
+      <p class="nudge-reason" id="nudge-reason"></p>
+      <p class="nudge-message">"Hey, it's you. Is this what you really want right now?"</p>
+      <div class="actions">
+        <button class="secondary" id="nudge-cancel" type="button">No, cancel it</button>
+        <button id="nudge-buy" type="button">Yes, buy it</button>
       </div>
     </div>
   </div>

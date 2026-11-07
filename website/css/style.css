@@ -293,6 +293,33 @@ body.night .activity li { border-color: #2e2040; }
 .ss-pick { display: flex; gap: 6px; margin-top: 6px; }
 .ss-pick button { padding: 4px 10px; font-size: 12px; background: var(--purple-50); color: var(--purple-800); }
 
+/* ---------- Try a purchase + nudge pop-up ---------- */
+.try-card { border: 1.5px solid var(--purple-100); }
+.try-label { margin: 18px 0 8px; }
+.try-examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.try-examples button.preset { width: auto; padding: 8px 14px; }
+#custom-form { display: flex; flex-direction: column; gap: 12px; }
+#custom-form button.wide { margin-top: 0; }
+.try-guess { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 14px; background: var(--purple-50); color: var(--muted); }
+.try-guess.need { background: var(--green-50); color: var(--green); font-weight: 600; }
+.try-guess.want { background: var(--amber-50); color: var(--amber); font-weight: 600; }
+.try-result { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--purple-50); }
+.try-result strong { font-size: 16px; }
+.try-result p { margin: 4px 0 0; }
+.try-result.allow { background: var(--green-50); }
+.try-result.allow strong { color: var(--green); }
+.try-result.nudge { background: var(--amber-50); }
+.try-result.nudge strong { color: var(--amber); }
+.try-result.hold { background: var(--purple-100); }
+.try-result.hold strong { color: var(--purple-800); }
+.nudge-overlay { background: rgba(13, 6, 20, 0.6); }
+.nudge-card { width: 100%; max-width: 440px; background: var(--card); color: var(--text); border-radius: var(--radius); padding: 28px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.nudge-kicker { margin: 0; color: var(--amber); font-weight: 700; font-size: 14px; }
+.nudge-card h2 { margin: 10px 0 0; font-size: 24px; }
+.nudge-reason { margin: 10px 0 0; font-size: 16px; font-weight: 600; color: var(--amber); }
+.nudge-message { margin: 14px 0 22px; color: var(--muted); font-style: italic; }
+.nudge-card .actions button { padding: 12px; font-size: 15px; }
+
 @media (max-width: 1000px) {
   .ss-totals { grid-template-columns: 1fr; }
   body { grid-template-columns: 1fr; }
