@@ -51,6 +51,19 @@ export function barPath(x, y, w, h, r = 4) {
   return `M${x},${y + h} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h} Z`;
 }
 
+// Shown in place of a chart while its CSV is loading, or if loading failed.
+export function ChartMessage({ title, error }) {
+  return (
+    <div className="spend-chart">
+      <style>{CHART_CSS}</style>
+      <h2 className="sc-title">{title}</h2>
+      <p className={error ? "sc-sub sc-error" : "sc-sub"}>
+        {error ? `Couldn't load the data (${error.message}).` : "Loading…"}
+      </p>
+    </div>
+  );
+}
+
 // Styles for both charts, scoped under .spend-chart.
 export const CHART_CSS = `
 .spend-chart {
@@ -71,6 +84,7 @@ export const CHART_CSS = `
 }
 .spend-chart .sc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .spend-chart .sc-title { font-size: 18px; margin: 0; }
+.spend-chart .sc-error { color: #b42318; }
 .spend-chart .sc-sub { margin: 2px 0 0; color: var(--sc-ink-2); font-size: 14px; }
 .spend-chart .sc-scale { display: inline-flex; background: #f3edf7; border-radius: 999px; padding: 3px; }
 .spend-chart .sc-scale button {

@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { dailyAnalysis as defaultDays } from "./dailyAnalysisData.js";
 import {
   AnomalyMarker,
   barPath,
   CHART_CSS,
+  ChartMessage,
   MONTHS,
   niceTicks,
   pounds,
@@ -11,6 +11,7 @@ import {
   SEVERITY,
   severityRank,
 } from "./chartShared.jsx";
+import { DEFAULT_URLS, parseDailyAnalysis, useCsv } from "./csvData.js";
 
 // Day-to-day spending (bills left out), with:
 // - a moving average of that spending (window chosen by the user, worked out here)
@@ -55,7 +56,16 @@ function linePath(points) {
   return d;
 }
 
-export default function SpendingTrendChart({ days = defaultDays, initialWindow = 7 }) {
+// Loads the CSV, then draws the chart. Pass `days` to skip fetching it.
+export default function SpendingTrendChart({ days, dailyUrl = DEFAULT_URLS.dailyAnalysis, initialWindow = 7 }) {
+  const file = useCsv(days ? null : dailyUrl, parseDailyAnalysis);
+  const d = days ?? file.data;
+
+  if (file.error || !d) return <ChartMessage title="Day-to-day spending" error={file.error} />;
+  return <SpendingTrendChartView days={d} initialWindow={initialWindow} />;
+}
+
+function SpendingTrendChartView({ days, initialWindow }) {
   const [windowDays, setWindowDays] = useState(initialWindow);
   const [hovered, setHovered] = useState(null);
   const [showTable, setShowTable] = useState(false);
