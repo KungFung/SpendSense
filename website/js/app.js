@@ -13,6 +13,7 @@ function renderClock() {
   const h = now.getHours();
   const night = h >= 23 || h < 6;
   document.body.classList.toggle("night", night);
+  notifyChart({ type: "pact:night", on: night });
 
   $("clock").textContent = now.toLocaleString("en-GB", {
     weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
@@ -158,9 +159,11 @@ function handlePurchase(purchase) {
     renderHolds();
     showHold(hold);
   } else if (decision.action === "nudge") {
+    recordSpend(tx.shop, tx.amount, date, { flagged: true });
     toast(`💬 ${label}: nudge`, `${decision.reason} It went through; your pact just checked in.`);
   } else {
     if (decision.plan) finish(decision.plan.id, "bought");
+    recordSpend(tx.shop, tx.amount, date, { preApproved: Boolean(decision.plan) });
     toast(`✅ ${label}: approved`, decision.reason);
   }
   logActivity(tx, decision);
@@ -225,6 +228,45 @@ try {
 } catch {
   // Not supported here; the shop window opened from the demo panel still works.
 }
+
+// ---------- Spending chart ----------
+// Purchases that go through are saved in the statement's transaction format (see
+// components/csvData.js, parseStatement) and chart.jsx adds them on top of the statement.
+// flagged: Pact had concerns (nudge, emergency release) · preApproved: planned in advance.
+function recordSpend(shop, amount, date, { flagged = false, preApproved = false } = {}) {
+  const d = new Date(date);
+  const pad = (n) => String(n).padStart(2, "0");
+  spent.push({
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    type: "POS",
+    description: shop,
+    value: -amount,
+    balance: null,
+    flagged,
+    preApproved,
+  });
+  save("pact.spent", spent);
+  notifyChart({ type: "pact:purchases-changed" });
+}
+
+function notifyChart(message) {
+  $("chart-frame").contentWindow?.postMessage(message, "*");
+}
+
+// The chart is a React page served by Vite, so it only works through `npm run dev`.
+if (location.protocol === "file:") {
+  $("chart-offline").hidden = false;
+} else {
+  $("chart-frame").hidden = false;
+  $("chart-frame").addEventListener("load", renderClock); // sends the night/day state
+  $("chart-frame").src = "chart.html?embed";
+}
+
+window.addEventListener("message", (e) => {
+  if (e.data?.type === "pact:chart-height" && e.source === $("chart-frame").contentWindow) {
+    $("chart-frame").style.height = e.data.height + "px";
+  }
+});
 
 // ---------- Toasts ----------
 function toast(title, text) {
@@ -294,6 +336,9 @@ $("demo-reset").addEventListener("click", () => {
   kept = 0;
   holds = [];
   activity = [];
+  spent = [];
+  save("pact.spent", spent);
+  notifyChart({ type: "pact:purchases-changed" });
   save("pact.plans", plans);
   save("pact.kept", kept);
   save("pact.holds", holds);
