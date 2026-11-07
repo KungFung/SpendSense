@@ -1,10 +1,10 @@
 import React from "react";
 
-// Helpers and styles for SpendingChart. The look follows Offbeat.html: same colour tokens,
-// fonts (Bricolage Grotesque / IBM Plex Sans / IBM Plex Mono), card and chart styling,
-// and the same light and dark themes.
+// Helpers and styles for SpendingChart. The look follows the Pact site (website/css/style.css):
+// its purple, amber and lavender colours, white cards, system font for text and
+// NatWest's RN House Sans in #383838 for numbers, and its night mode.
 
-// Unusual-day markers use shape for severity, in Offbeat's "above range" amber.
+// Unusual-day markers use shape for severity, in ink so they don't clash with the bar colours.
 // Ordered from most to least serious.
 export const SEVERITY = [
   { classification: "Significant overspending", label: "Significant overspending", shape: "filled" },
@@ -17,12 +17,12 @@ export const severityRank = (c) => {
 };
 
 export function AnomalyMarker({ x, y, shape, size = 5 }) {
-  if (shape === "dot") return <circle cx={x} cy={y} r={size * 0.6} style={{ fill: "var(--warn)" }} />;
+  if (shape === "dot") return <circle cx={x} cy={y} r={size * 0.6} style={{ fill: "var(--mark)" }} />;
   const d = `M${x},${y - size} L${x + size},${y + size * 0.8} L${x - size},${y + size * 0.8} Z`;
   return shape === "filled" ? (
-    <path d={d} style={{ fill: "var(--warn)" }} />
+    <path d={d} style={{ fill: "var(--mark)" }} />
   ) : (
-    <path d={d} style={{ fill: "var(--surface)", stroke: "var(--warn)", strokeWidth: 1.5 }} />
+    <path d={d} style={{ fill: "var(--surface)", stroke: "var(--mark)", strokeWidth: 1.5 }} />
   );
 }
 
@@ -64,131 +64,131 @@ export function ChartMessage({ title, error, children }) {
   );
 }
 
-// Offbeat's colour tokens. Dark values apply with the OS dark setting unless the page sets
-// data-theme="light", or always when the page sets data-theme="dark" (as Offbeat does).
+// Pact's colour tokens (website/css/style.css), by role. Night values apply under the Pact site's
+// night mode (body.night). Bar colours were checked for colour blindness with the dataviz validator.
 const LIGHT = `
-  --bg: #EBEFF2; --surface: #FFFFFF; --surface-2: #F2F5F7; --ink: #101C26; --ink-2: #506270; --line: #D5DDE3;
-  --accent: #0E6A8A; --accent-ink: #FFFFFF; --band: #CFE4EC; --bar: #8798A5;
-  --ok: #2A7B4E; --ok-bg: #DDF0E5; --warn: #9A5600; --warn-bg: #FBEBCF; --alert: #B0261E; --alert-bg: #F9DDDA;
+  --surface: #ffffff; --surface-2: #f6f2fa; --ink: #1d1d1f; --ink-2: #6b6b76; --line: #e7e1ee; --num: #383838;
+  --accent: #42145f; --accent-2: #5a287d; --accent-ink: #ffffff; --accent-soft: #ece4f3;
+  --seg-other: #b3a8c0; --seg-pre: #5a287d; --seg-flag: #b25e00; --band: #ece4f3; --wkend: #faf7fc;
+  --mark: #1d1d1f; --flag-bg: #fff4e5; --pre-bg: #ece4f3; --alert: #b3261e;
+  --shadow: 0 1px 3px rgba(42, 12, 63, 0.06); --tip-shadow: 0 10px 30px rgba(42, 12, 63, 0.18);
   color-scheme: light;`;
-const DARK = `
-  --bg: #0D151C; --surface: #15212B; --surface-2: #1B2A36; --ink: #E6EDF2; --ink-2: #98A8B4; --line: #263643;
-  --accent: #5DB8D6; --accent-ink: #06222D; --band: #21404F; --bar: #6C8292;
-  --ok: #5EC08C; --ok-bg: #163526; --warn: #E5A446; --warn-bg: #3A2B12; --alert: #F28C84; --alert-bg: #3F1B19;
+const NIGHT = `
+  --surface: #21152f; --surface-2: #2e2040; --ink: #eeeeee; --ink-2: #a99bb8; --line: #3d2c52; --num: #eeeeee;
+  --accent: #d9c2ef; --accent-2: #d9c2ef; --accent-ink: #21152f; --accent-soft: #2e2040;
+  --seg-other: #6a5e78; --seg-pre: #b48ae0; --seg-flag: #d9873a; --band: #33244a; --wkend: #261a36;
+  --mark: #eeeeee; --flag-bg: #3a2712; --pre-bg: #33244a; --alert: #f2a09a;
+  --shadow: none; --tip-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   color-scheme: dark;`;
 
 // Styles for the chart, scoped under .spend-chart (the chart's card).
 export const CHART_CSS = `
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
-
 .spend-chart {${LIGHT}
-  --display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
-  --body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --numfont: "RN House Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .spend-chart {${DARK}
-  }
-}
-:root[data-theme="dark"] .spend-chart {${DARK}
+body.night .spend-chart {${NIGHT}
 }
 
 .spend-chart {
   box-sizing: border-box;
   min-width: 0; /* lets the chart scroll sideways instead of stretching a grid/flex parent */
-  display: flex; flex-direction: column; gap: 14px;
+  display: flex; flex-direction: column; gap: 16px;
   background: var(--surface); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 10px; padding: 18px;
-  font-family: var(--body); font-size: 15px; line-height: 1.5;
+  border-radius: 16px; padding: 20px; box-shadow: var(--shadow);
+  font-family: var(--body); font-size: 15px; line-height: 1.45;
 }
 .spend-chart *, .spend-chart *::before, .spend-chart *::after { box-sizing: border-box; }
 .spend-chart h2, .spend-chart p { margin: 0; }
 .spend-chart button, .spend-chart input { font: inherit; color: inherit; }
-.spend-chart :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.spend-chart :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 
 /* header */
 .spend-chart .sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.spend-chart .sc-title { font-family: var(--display); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-.spend-chart .sc-hint { color: var(--ink-2); font-size: 12.5px; }
-.spend-chart .sc-empty { padding: 24px 0; color: var(--ink-2); }
+.spend-chart .sc-title { font-size: 20px; font-weight: 700; }
+.spend-chart .sc-hint { color: var(--ink-2); font-size: 14px; }
+.spend-chart .sc-empty { padding: 24px 0; color: var(--ink-2); font-size: 14px; }
 .spend-chart .sc-error { color: var(--alert); }
 
-/* headline numbers, like Offbeat's meters */
-.spend-chart .sc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 24px; }
-.spend-chart .sc-stat { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-.spend-chart .sc-stat span { font-size: 12.5px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
-.spend-chart .sc-stat b { font-family: var(--mono); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+/* headline numbers, like the Pact home cards */
+.spend-chart .sc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.spend-chart .sc-stat { display: flex; flex-direction: column-reverse; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.spend-chart .sc-stat span { font-size: 13px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.6px; }
+.spend-chart .sc-stat b { font-family: var(--numfont); font-size: 28px; font-weight: 400; line-height: 1.1; color: var(--num); font-variant-numeric: tabular-nums; }
 
 /* controls */
 .spend-chart .sc-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; }
-.spend-chart .sc-scale { display: flex; flex-wrap: wrap; gap: 6px; }
+.spend-chart .sc-scale { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface-2); }
 .spend-chart .sc-scale button {
-  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 14px;
-  font-size: 13.5px; cursor: pointer;
+  border: 0; background: transparent; color: var(--ink-2); border-radius: 999px; padding: 7px 16px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.spend-chart .sc-scale button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.spend-chart .sc-toggles { display: flex; gap: 6px 16px; flex-wrap: wrap; }
-.spend-chart .sc-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
-.spend-chart .sc-toggle input { accent-color: var(--accent); margin: 0; }
+.spend-chart .sc-scale button.on { background: var(--accent); color: var(--accent-ink); }
+.spend-chart .sc-toggles { display: flex; gap: 6px 18px; flex-wrap: wrap; }
+.spend-chart .sc-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); cursor: pointer; }
+.spend-chart .sc-toggle input { accent-color: var(--accent-2); margin: 0; width: 16px; height: 16px; }
 
 /* chart */
 .spend-chart .sc-area { position: relative; }
 .spend-chart .sc-scroll { overflow-x: auto; }
 .spend-chart .sc-plot { position: relative; }
 .spend-chart svg { display: block; }
-.spend-chart svg text { font-family: var(--mono); font-size: 10.5px; fill: var(--ink-2); }
-.spend-chart svg text.strong { fill: var(--ink); font-weight: 500; }
+.spend-chart svg text { font-family: var(--numfont); font-size: 11.5px; fill: var(--ink-2); }
+.spend-chart svg text.strong { fill: var(--ink); font-family: var(--body); font-weight: 600; font-size: 11px; }
 .spend-chart .sc-gridline { stroke: var(--line); stroke-width: 1; }
-.spend-chart .sc-wkend { fill: var(--surface-2); }
+.spend-chart .sc-wkend { fill: var(--wkend); }
 .spend-chart .sc-band { fill: var(--band); }
-.spend-chart .sc-sel { fill: none; stroke: var(--accent); stroke-width: 2; pointer-events: none; }
+.spend-chart .sc-sel { fill: none; stroke: var(--accent-2); stroke-width: 2; pointer-events: none; }
 .spend-chart .sc-avg { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
 .spend-chart .sc-avg-halo { fill: none; stroke: var(--surface); stroke-width: 5; stroke-linejoin: round; pointer-events: none; }
 .spend-chart .sc-dot { fill: var(--ink); stroke: var(--surface); stroke-width: 2; pointer-events: none; }
-.spend-chart svg text.sc-end-label { fill: var(--ink); font-weight: 500; }
-.spend-chart svg text.sc-mark-count { fill: var(--warn); font-weight: 500; }
+.spend-chart svg text.sc-end-label { fill: var(--ink); font-family: var(--body); font-weight: 600; font-size: 12px; }
+.spend-chart svg text.sc-mark-count { fill: var(--mark); font-family: var(--body); font-weight: 700; font-size: 10.5px; }
 
 /* legend */
-.spend-chart .sc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+.spend-chart .sc-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
 .spend-chart .sc-legend li { display: flex; align-items: center; }
-.spend-chart .sc-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; flex: none; }
+.spend-chart .sc-key { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 7px; flex: none; }
 .spend-chart .sc-key-line { width: 14px; height: 2px; border-radius: 1px; background: var(--ink); }
-.spend-chart .sc-legend svg { margin-right: 6px; flex: none; }
+.spend-chart .sc-legend svg { margin-right: 7px; flex: none; }
 
-/* tooltip */
+/* tooltip, like the Pact toast */
 .spend-chart .sc-tip {
   position: absolute; z-index: 1; pointer-events: none;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(16, 28, 38, 0.14); padding: 12px 14px; font-size: 13px;
+  background: var(--surface); border-radius: 14px; box-shadow: var(--tip-shadow);
+  border: 1px solid var(--line); padding: 14px 16px; font-size: 13.5px;
   display: flex; flex-direction: column; gap: 8px;
 }
-.spend-chart .sc-tip-date { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
-.spend-chart .sc-tip-total { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
-.spend-chart .sc-tip-section { display: flex; flex-direction: column; gap: 3px; border-top: 1px solid var(--line); padding-top: 8px; }
+.spend-chart .sc-tip-date { font-size: 13px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.6px; }
+.spend-chart .sc-tip-total { font-family: var(--numfont); font-size: 28px; line-height: 1.1; color: var(--num); }
+.spend-chart .sc-tip-section { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--line); padding-top: 8px; }
 .spend-chart .sc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .spend-chart .sc-row > span:first-child { display: flex; align-items: center; color: var(--ink-2); min-width: 0; }
-.spend-chart .sc-row > span:last-child { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
-.spend-chart .sc-note { color: var(--ink-2); font-size: 12px; }
-.spend-chart .sc-chip { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 4px; margin-right: 6px; white-space: nowrap; }
-.spend-chart .sc-chip.alert { background: var(--alert-bg); color: var(--alert); }
-.spend-chart .sc-chip.accent { background: var(--band); color: var(--accent); }
-.spend-chart .sc-pill { margin-bottom: 2px; display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-weight: 600; font-size: 12px; background: var(--warn-bg); color: var(--warn); }
+.spend-chart .sc-row > span:last-child { font-family: var(--numfont); color: var(--num); white-space: nowrap; }
+.spend-chart .sc-note { color: var(--ink-2); font-size: 12.5px; }
+.spend-chart .sc-chip { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 6px; white-space: nowrap; }
+.spend-chart .sc-chip.flag { background: var(--flag-bg); color: var(--seg-flag); }
+.spend-chart .sc-chip.pre { background: var(--pre-bg); color: var(--seg-pre); }
+.spend-chart .sc-pill { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; margin-bottom: 2px; padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; background: var(--surface-2); color: var(--ink); }
 
-/* footer and table */
+/* footer, buttons and table */
 .spend-chart .sc-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.spend-chart .sc-foot-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-.spend-chart .sc-source { font-size: 12.5px; color: var(--ink-2); overflow-wrap: anywhere; }
-.spend-chart .sc-source b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
-.spend-chart .sc-linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+.spend-chart .sc-foot-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.spend-chart .sc-source { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+.spend-chart .sc-source b { color: var(--ink); font-weight: 600; }
+.spend-chart .sc-linkbtn { border: 0; background: none; padding: 0; color: var(--accent-2); font-size: 13px; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.spend-chart .sc-upload-error { font-size: 13px; color: var(--alert); }
+.spend-chart .sc-btn {
+  border: 1.5px solid var(--accent); background: transparent; color: var(--accent);
+  border-radius: 999px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
 .spend-chart .sc-btn.solid { background: var(--accent); color: var(--accent-ink); }
 .spend-chart .sc-btn:disabled { opacity: 0.5; cursor: default; }
-.spend-chart .sc-upload-error { font-size: 12.5px; color: var(--alert); }
-.spend-chart .sc-btn { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 8px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.spend-chart .sc-table-wrap { max-height: 320px; overflow: auto; }
-.spend-chart .sc-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.spend-chart .sc-table th { text-align: left; padding: 6px 8px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-2); font-weight: 600; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); }
-.spend-chart .sc-table td { padding: 7px 8px; border-top: 1px solid var(--line); }
-.spend-chart .sc-table .num { text-align: right; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.spend-chart .sc-table-wrap { max-height: 340px; overflow: auto; }
+.spend-chart .sc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.spend-chart .sc-table th { text-align: left; padding: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-2); font-weight: 700; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--line); }
+.spend-chart .sc-table td { padding: 8px; border-top: 1px solid var(--line); }
+.spend-chart .sc-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.spend-chart .sc-table td.num { font-family: var(--numfont); color: var(--num); }
 .spend-chart .sc-table td.sc-muted { color: var(--ink-2); }
-.spend-chart .sc-table th.num { font-family: var(--body); font-size: 11.5px; }
 `;

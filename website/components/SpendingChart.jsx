@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   AnomalyMarker,
   barPath,
@@ -13,13 +13,14 @@ import {
   severityRank,
 } from "./chartShared.jsx";
 import { DEFAULT_STATEMENT_URL, readStatementFile, useStatement } from "./csvData.js";
+import "./fonts.css"; // RN House Sans for numbers, like the Pact site
 
-// One chart of spending over time, read from the bank statement, styled like Offbeat.html:
+// One chart of spending over time, read from the bank statement, styled like the Pact site:
 // - bars: how much was spent in each day / week / month, split into flagged, pre-approved and other purchases
 // - a pale band behind each bar: the usual range of day-to-day spending from the anomaly detection.
 //   A bar above its band is exactly an unusual day.
 // - a moving average of day-to-day spending (dark line)
-// - amber markers under days the anomaly detection marked as unusual
+// - markers under days the anomaly detection marked as unusual
 // Bills (direct debits and standing orders) are hidden by default so a £650 rent payment doesn't
 // squash everything else; when hidden, the bars, band and line all measure the same thing.
 
@@ -30,11 +31,11 @@ const SCALES = [
   { id: "month", label: "Month", lines: false, avgWindow: null, avgLabel: null },
 ];
 
-// Bar segments, bottom to top, in Offbeat's colours. Bills count as pre-approved.
+// Bar segments, bottom to top, in Pact's colours (lavender grey, purple, amber). Bills count as pre-approved.
 const SEGMENTS = [
-  { key: "other", label: "Other spending", color: "var(--bar)" },
-  { key: "preApproved", label: "Pre-approved", color: "var(--accent)" },
-  { key: "flagged", label: "Flagged", color: "var(--alert)" },
+  { key: "other", label: "Other spending", color: "var(--seg-other)" },
+  { key: "preApproved", label: "Pre-approved", color: "var(--seg-pre)" },
+  { key: "flagged", label: "Flagged", color: "var(--seg-flag)" },
 ];
 
 const BILL_TYPES = new Set(["D/D", "S/O"]);
@@ -143,7 +144,7 @@ function linePath(points) {
 // Loads the statement CSV and works out the analysis from it, then draws the chart.
 // Pass `data` (the output of analyseStatement) to skip loading the file.
 // The user can also upload their own statement CSV; it's read in the browser and never sent anywhere.
-export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_URL, initialScale = "day" }) {
+export default function SpendingChart({ data, statementUrl = DEFAULT_STATEMENT_URL, initialScale = "week" }) {
   const [upload, setUpload] = useState(null); // { name, data, id } once the user has uploaded a file
   const [uploadError, setUploadError] = useState(null);
   const loaded = useStatement(data ? null : statementUrl);
@@ -225,9 +226,11 @@ function SpendingChartView({ data, initialScale, upload }) {
   const [wrapWidth, setWrapWidth] = useState(600);
   const [scrollX, setScrollX] = useState(0);
 
-  useEffect(() => {
+  // Measure the chart's width before the first paint (so it doesn't flash at 600px), then keep it updated.
+  useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    setWrapWidth(el.clientWidth);
     const ro = new ResizeObserver(([entry]) => setWrapWidth(entry.contentRect.width));
     ro.observe(el);
     return () => ro.disconnect();
@@ -252,7 +255,7 @@ function SpendingChartView({ data, initialScale, upload }) {
   const plotH = height - margin.top - margin.bottom;
   const width = plotW + margin.left + margin.right;
   const slot = plotW / Math.max(buckets.length, 1);
-  // Like Offbeat: the band is a little narrower than the slot, the bar narrower again.
+  // The band is a little narrower than the slot, the bar narrower again.
   const bandInset = Math.min(3, slot * 0.12);
   const barInset = Math.min(slot * 0.3, Math.max(slot * 0.18, 6) + (slot > 60 ? slot * 0.12 : 0));
   const barW = Math.max(1, slot - 2 * barInset);
@@ -385,7 +388,7 @@ function SpendingChartView({ data, initialScale, upload }) {
                 aria-label={`Spending per ${scale} against the usual range. Use "Show as table" for the numbers.`}
                 onMouseLeave={() => setHovered(null)}
               >
-                {/* Weekend shading (Day view only), like Offbeat */}
+                {/* Weekend shading (Day view only) */}
                 {scale === "day" &&
                   buckets.map((b, i) =>
                     b.start.getDay() % 6 === 0 ? <rect key={`w${i}`} className="sc-wkend" x={x0(i)} y={margin.top} width={slot} height={plotH} /> : null
@@ -610,7 +613,7 @@ function Tooltip({ b, scale, scaleInfo, includeBills, showUnusual, left, top, wi
           {notable.slice(0, 4).map((p, k) => (
             <div key={k} className="sc-row">
               <span>
-                <b className={`sc-chip ${p.flagged ? "alert" : "accent"}`}>{p.flagged ? "Flagged" : "Pre-approved"}</b>
+                <b className={`sc-chip ${p.flagged ? "flag" : "pre"}`}>{p.flagged ? "Flagged" : "Pre-approved"}</b>
                 {p.description}
               </span>
               <span>{pounds(p.amount)}</span>
