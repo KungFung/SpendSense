@@ -106,7 +106,21 @@ test('all app scripts start; navigation and profile controls update recommendati
   elements.get('price').value = '40';
   elements.get('plan-form').dispatch('submit');
   assert.equal(elements.get('plans').children.length, 1);
-  assert.equal(context.handlePurchase({ shop: 'Demo groceries', amount: 20, type: 'need' }).action, 'allow');
-  assert.equal(context.handlePurchase({ shop: 'Demo coat', amount: 200, type: 'want' }).action, 'hold');
-  assert.equal(elements.get('hold-overlay').hidden, false);
+  if (typeof context.handlePurchase === 'function') {
+    // Newer main uses a simulated purchase handler and hold overlay.
+    assert.equal(context.handlePurchase({ shop: 'Demo groceries', amount: 20, type: 'need' }).action, 'allow');
+    assert.equal(context.handlePurchase({ shop: 'Demo coat', amount: 200, type: 'want' }).action, 'hold');
+    assert.equal(elements.get('hold-overlay').hidden, false);
+  } else {
+    // This feature branch still uses the original dashboard hold controls.
+    elements.get('hold-plan').dispatch('click');
+    assert.equal(elements.get('plans').children.length, 2);
+    assert.equal(elements.get('hold-card').hidden, true);
+    elements.get('demo-reset').dispatch('click');
+    assert.equal(elements.get('plans').children.length, 0);
+    assert.equal(elements.get('hold-card').hidden, false);
+    elements.get('hold-cancel').dispatch('click');
+    assert.equal(elements.get('hold-card').hidden, true);
+    assert.ok(storage.has('pact.kept'));
+  }
 });
